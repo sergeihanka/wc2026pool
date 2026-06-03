@@ -1,0 +1,10 @@
+{
+  "method": "GET",
+  "path": "/v4/competitions/WC/matches",
+  "status": 200,
+  "description": "Returns all World Cup 2026 matches. Response is an array matching the Match interface from src/types/index.ts. Fields: id (number), homeTeam (Team), awayTeam (Team), homeScore (number|null), awayScore (number|null), status (MatchStatus), utcDate (ISO8601 string), stage (string), group (string, optional), goals (Goal[]), minute (number|null, optional — only present during IN_PLAY).",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "notes": "football-data.org free tier returns all matches for WC competition. Auth: X-Auth-Token header required with VITE_FOOTBALL_API_KEY."
+}
