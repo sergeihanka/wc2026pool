@@ -88,9 +88,9 @@ function computeTeamRecord(
 }
 
 function getTeamMatches(teamName: string, matches: Match[]): Match[] {
-  return matches.filter(
-    (m) => m.homeTeam.name === teamName || m.awayTeam.name === teamName,
-  )
+  return matches
+    .filter((m) => m.homeTeam.name === teamName || m.awayTeam.name === teamName)
+    .sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime())
 }
 
 interface StatCardProps {

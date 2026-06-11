@@ -118,7 +118,7 @@ export default function ScoresPage() {
   }
 
   const grouped = groupByDate(matches)
-  const sortedDates = Array.from(grouped.keys()).sort()
+  const sortedDates = Array.from(grouped.keys()).sort().reverse()
 
   const stalenessColor =
     lastUpdated && isStalenessWarning(lastUpdated, isOnline)

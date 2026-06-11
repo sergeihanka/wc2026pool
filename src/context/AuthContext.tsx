@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { PoolMember, SessionData } from '@/types'
-import { POOL_MEMBERS, verifyPassword } from '@/config/pool'
+import { POOL_MEMBERS } from '@/config/pool'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ export interface AuthContextValue {
   currentMember: PoolMember | null
   isAuthenticated: boolean
   isLoading: boolean
-  login(memberId: string, password: string): boolean
+  login(memberId: string): boolean
   logout(): void
 }
 
@@ -124,9 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const login = useCallback(
-    (memberId: string, password: string): boolean => {
-      if (!verifyPassword(memberId, password)) return false
-
+    (memberId: string): boolean => {
       const member = findMember(memberId)
       if (!member) return false
 
