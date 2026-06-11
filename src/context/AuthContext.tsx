@@ -18,6 +18,7 @@ const SESSION_TTL_MS = 90 * 24 * 60 * 60 * 1000 // 90 days
 export interface AuthContextValue {
   currentMember: PoolMember | null
   isAuthenticated: boolean
+  isLoading: boolean
   login(memberId: string, password: string): boolean
   logout(): void
 }
@@ -25,6 +26,7 @@ export interface AuthContextValue {
 export const AuthContext = createContext<AuthContextValue>({
   currentMember: null,
   isAuthenticated: false,
+  isLoading: true,
   login: () => false,
   logout: () => undefined,
 })
@@ -76,6 +78,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [currentMember, setCurrentMember] = useState<PoolMember | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const lsAvailable = isLocalStorageAvailable()
 
   // On mount: restore session if valid
@@ -85,14 +88,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         '[AuthProvider] localStorage is unavailable. ' +
           'Session will not persist across tab close.',
       )
+      setIsLoading(false)
       return
     }
 
     const session = readSession()
-    if (!session) return
+    if (!session) {
+      setIsLoading(false)
+      return
+    }
 
     if (session.expiresAt <= Date.now()) {
       clearSession()
+      setIsLoading(false)
       return
     }
 
@@ -100,6 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (member) {
       setCurrentMember(member)
     }
+    setIsLoading(false)
   }, [lsAvailable])
 
   // Listen for storage events — if wcp_session is cleared in another tab, log out here
@@ -142,6 +151,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       value={{
         currentMember,
         isAuthenticated: currentMember !== null,
+        isLoading,
         login,
         logout,
       }}
