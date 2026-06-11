@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Match } from '@/types'
 import { poolService } from '@/services/PoolService'
-import { PollingService } from '@/services/PollingService'
+import { supabase } from '@/lib/supabase'
 
 interface UseScoresResult {
   matches: Match[]
@@ -18,8 +18,8 @@ export function useScores(): UseScoresResult {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isSyncing, setIsSyncing] = useState(true)
 
-  const lastFetchTimeRef = useRef<Date | null>(null)
-  const polling = PollingService.getInstance()
+  // Track whether we've ever received data so we can show the right empty state.
+  const hasDataRef = useRef(false)
 
   async function fetchMatches() {
     try {
@@ -29,7 +29,11 @@ export function useScores(): UseScoresResult {
       const data = await Promise.race([poolService.getAllMatches(), timeout])
       setMatches(data)
       setError(null)
-      if (data.length > 0) setIsSyncing(false)
+      if (data.length > 0) {
+        hasDataRef.current = true
+        setIsSyncing(false)
+        setLastUpdated(new Date())
+      }
     } catch (err) {
       console.error('[useScores] fetchMatches failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to load matches')
@@ -44,29 +48,43 @@ export function useScores(): UseScoresResult {
     void fetchMatches()
   }, [])
 
-  // Poll PollingService.lastFetchTime every second — re-fetch from Supabase
-  // whenever the poller writes fresh data.
+  // Subscribe to Supabase Realtime — re-fetch whenever the server-side poller
+  // writes new data to match_results_cache.  All connected browsers get the
+  // update instantly; no browser ever calls the football-data.org API.
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      const current = polling.getLastFetchTime()
-      const prev = lastFetchTimeRef.current
+    const channel = supabase
+      .channel('match_cache_live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'match_results_cache' },
+        () => {
+          void fetchMatches()
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[useScores] Supabase Realtime connected')
+        }
+      })
 
-      if (current && current !== prev) {
-        lastFetchTimeRef.current = current
-        setLastUpdated(current)
-        void fetchMatches()
-      }
-    }, 1000)
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [])
 
-    return () => clearInterval(intervalId)
-  }, [polling])
+  // Fallback: poll Supabase every 30s in case Realtime is unavailable.
+  // This is cheap (just a DB read) and ensures data stays fresh.
+  useEffect(() => {
+    const id = setInterval(() => void fetchMatches(), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
-  // When cache is empty after initial load, retry Supabase every 3 seconds
-  // until data arrives (poller is filling it in the background).
+  // Aggressive retry while cache is empty (e.g. right after a TRUNCATE).
+  // Stops as soon as we receive any data.
   useEffect(() => {
     if (loading || matches.length > 0) return
-    const retryId = setInterval(() => void fetchMatches(), 3_000)
-    return () => clearInterval(retryId)
+    const id = setInterval(() => void fetchMatches(), 3_000)
+    return () => clearInterval(id)
   }, [loading, matches.length])
 
   return { matches, loading, error, lastUpdated, isSyncing }
