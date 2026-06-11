@@ -21,10 +21,14 @@ export function useScores(): UseScoresResult {
 
   async function fetchMatches() {
     try {
-      const data = await poolService.getAllMatches()
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out after 10s')), 10_000),
+      )
+      const data = await Promise.race([poolService.getAllMatches(), timeout])
       setMatches(data)
       setError(null)
     } catch (err) {
+      console.error('[useScores] fetchMatches failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to load matches')
     } finally {
       setLoading(false)
