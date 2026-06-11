@@ -1,14 +1,4 @@
-/**
- * FootballDataService — calls the football-data.org v4 API.
- *
- * Free tier: 10 requests/minute.
- * Auth: X-Auth-Token header.
- * Competition: WC (FIFA World Cup).
- *
- * Do NOT call this directly from components — it is called by the polling service.
- */
-
-import type { Match, Team, Goal, MatchStatus } from '@/types'
+import type { Match, Team, Goal, Booking, MatchStatus } from '@/types'
 import type { IScoreService } from './IScoreService'
 import { FOOTBALL_API_KEY, FOOTBALL_API_BASE_URL } from '@/config/env'
 
@@ -33,6 +23,13 @@ interface ApiGoal {
   team: { id: number; name: string }
 }
 
+interface ApiBooking {
+  minute: number | string | null
+  team: { id: number; name: string }
+  card: 'YELLOW' | 'RED' | 'YELLOW_RED'
+  player?: { name: string } | null
+}
+
 type ApiMatchStatus =
   | 'TIMED'
   | 'IN_PLAY'
@@ -53,6 +50,7 @@ interface ApiMatch {
   homeTeam: ApiTeam
   awayTeam: ApiTeam
   goals: ApiGoal[]
+  bookings?: ApiBooking[]
 }
 
 interface ApiMatchesResponse {
@@ -85,6 +83,16 @@ function mapGoals(apiGoals: ApiGoal[], homeTeamId: number): Goal[] {
   }))
 }
 
+function mapBookings(apiBookings: ApiBooking[] | undefined, homeTeamId: number): Booking[] {
+  if (!apiBookings) return []
+  return apiBookings.map((b) => ({
+    minute: b.minute ?? 0,
+    team: b.team.id === homeTeamId ? 'home' : 'away',
+    card: b.card,
+    player: b.player?.name ?? null,
+  }))
+}
+
 function mapMatch(apiMatch: ApiMatch): Match {
   return {
     id: apiMatch.id,
@@ -97,6 +105,7 @@ function mapMatch(apiMatch: ApiMatch): Match {
     stage: apiMatch.stage,
     group: apiMatch.group ?? undefined,
     goals: mapGoals(apiMatch.goals ?? [], apiMatch.homeTeam.id),
+    bookings: mapBookings(apiMatch.bookings, apiMatch.homeTeam.id),
     minute: apiMatch.minute ?? null,
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -8,12 +8,18 @@ import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import Tooltip from '@mui/material/Tooltip'
 import Divider from '@mui/material/Divider'
+import CircularProgress from '@mui/material/CircularProgress'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import { PollingService } from '@/services/PollingService'
 import { poolService } from '@/services/PoolService'
 import { useScores } from '@/hooks/useScores'
 import { POOL_MEMBERS } from '@/config/pool'
 import type { Match, PoolMember, LeaderboardRow } from '@/types'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type SortKey = 'points' | 'played' | 'won' | 'drawn' | 'lost' | 'goalsFor' | 'goalsAgainst' | 'goalDifference' | 'yellowCards' | 'redCards'
+type SortDir = 'asc' | 'desc'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +41,13 @@ function formatGD(gd: number): string {
   return gd > 0 ? `+${gd}` : String(gd)
 }
 
+function sortRows(rows: LeaderboardRow[], key: SortKey, dir: SortDir): LeaderboardRow[] {
+  return [...rows].sort((a, b) => {
+    const diff = (a[key] as number) - (b[key] as number)
+    return dir === 'desc' ? -diff : diff
+  })
+}
+
 function sortMatchesForHome(matches: Match[]): Match[] {
   const order = (m: Match) => {
     if (m.status === 'IN_PLAY') return 0
@@ -54,9 +67,17 @@ function getTodayAndLiveMatches(matches: Match[]): Match[] {
   return matches.filter((m) => {
     const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED'
     const isToday = m.utcDate.slice(0, 10) === todayUtc
-    const isUpcoming = (m.status === 'SCHEDULED' || m.status === 'TIMED') && isToday
-    return isLive || isToday || isUpcoming
+    return isLive || isToday
   })
+}
+
+function formatLastUpdated(d: Date | null): string {
+  if (!d) return ''
+  const diffMs = Date.now() - d.getTime()
+  const diffS = Math.floor(diffMs / 1000)
+  if (diffS < 10) return 'just now'
+  if (diffS < 60) return `${diffS}s ago`
+  return `${Math.floor(diffS / 60)}m ago`
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -65,23 +86,38 @@ function MemberStakes({ match }: { match: Match }) {
   const stakes = getMatchStakes(match)
   if (stakes.length === 0) return null
   return (
-    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.75 }}>
-      {stakes.map((m) => (
-        <Tooltip key={m.id} title={`${m.displayName} (${m.teams.filter((t) => match.homeTeam.shortCode === t || match.awayTeam.shortCode === t).join(', ')})`}>
-          <Avatar
-            sx={{
-              width: 24,
-              height: 24,
-              fontSize: '0.55rem',
-              fontWeight: 700,
-              bgcolor: m.color,
-              cursor: 'default',
-            }}
-          >
-            {m.avatarInitials}
-          </Avatar>
-        </Tooltip>
-      ))}
+    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.75, flexWrap: 'wrap' }}>
+      {stakes.map((m) => {
+        const involvedTeams = m.teams.filter(
+          (t) => match.homeTeam.shortCode === t || match.awayTeam.shortCode === t,
+        )
+        return (
+          <Tooltip key={m.id} title={`${m.displayName} · ${involvedTeams.join(', ')}`}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+              <Avatar
+                sx={{
+                  width: 22,
+                  height: 22,
+                  fontSize: '0.55rem',
+                  fontWeight: 700,
+                  bgcolor: m.color,
+                  cursor: 'default',
+                }}
+              >
+                {m.avatarInitials}
+              </Avatar>
+              {involvedTeams.map((t) => (
+                <Chip
+                  key={t}
+                  label={t}
+                  size="small"
+                  sx={{ height: 18, fontSize: '0.6rem', bgcolor: m.color, color: '#fff' }}
+                />
+              ))}
+            </Box>
+          </Tooltip>
+        )
+      })}
     </Box>
   )
 }
@@ -107,7 +143,6 @@ function LiveMatchCard({ match }: { match: Match }) {
         '&:hover': { borderColor: 'primary.main' },
       }}
     >
-      {/* Stage + status */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
         <Typography variant="caption" color="text.secondary">
           {formatStageLabel(match.stage)}
@@ -116,7 +151,6 @@ function LiveMatchCard({ match }: { match: Match }) {
         <StatusChip match={match} />
       </Box>
 
-      {/* Score row */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
         <Typography variant="h5" sx={{ flex: 1, textAlign: 'right', fontWeight: 700 }}>
           {homeCode}
@@ -129,7 +163,6 @@ function LiveMatchCard({ match }: { match: Match }) {
         </Typography>
       </Box>
 
-      {/* Live minute */}
       {isLive && match.minute != null && (
         <Box sx={{ textAlign: 'center', mb: 0.5 }}>
           <Typography variant="caption" color="error.main" sx={{ fontWeight: 700 }}>
@@ -138,11 +171,52 @@ function LiveMatchCard({ match }: { match: Match }) {
         </Box>
       )}
 
-      {/* Pool member stakes */}
       <MemberStakes match={match} />
     </Paper>
   )
 }
+
+// ─── SortableHeader ───────────────────────────────────────────────────────────
+
+function SortableHeader({
+  label,
+  sortKey,
+  current,
+  dir,
+  onSort,
+  align = 'right',
+  minWidth,
+}: {
+  label: string
+  sortKey: SortKey
+  current: SortKey
+  dir: SortDir
+  onSort: (k: SortKey) => void
+  align?: 'left' | 'right' | 'center'
+  minWidth?: number
+}) {
+  const isActive = current === sortKey
+  return (
+    <Typography
+      variant="caption"
+      onClick={() => onSort(sortKey)}
+      sx={{
+        color: isActive ? 'primary.main' : 'text.secondary',
+        fontWeight: isActive ? 700 : 400,
+        cursor: 'pointer',
+        userSelect: 'none',
+        textAlign: align,
+        minWidth,
+        display: 'inline-block',
+        '&:hover': { color: 'text.primary' },
+      }}
+    >
+      {label}{isActive ? (dir === 'desc' ? ' ↓' : ' ↑') : ''}
+    </Typography>
+  )
+}
+
+// ─── StandingsRow ─────────────────────────────────────────────────────────────
 
 function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: Set<string> }) {
   const rankColor = RANK_COLORS[row.rank]
@@ -176,16 +250,7 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         {row.rank}
       </Typography>
 
-      {/* Member color dot */}
-      <Box
-        sx={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          bgcolor: row.member.color,
-          flexShrink: 0,
-        }}
-      />
+      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: row.member.color, flexShrink: 0 }} />
 
       <Typography
         sx={{
@@ -196,6 +261,7 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          minWidth: 80,
         }}
       >
         {row.member.displayName}
@@ -219,15 +285,23 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         ))}
       </Box>
 
-      <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1.5, minWidth: 120, justifyContent: 'flex-end' }}>
-        <Typography variant="caption" color="text.secondary">
+      {/* Stats columns — hidden on mobile, shown on sm+ */}
+      <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1.5, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <StatCell value={row.played} width={22} />
+        <StatCell value={row.won} width={22} />
+        <StatCell value={row.drawn} width={22} />
+        <StatCell value={row.lost} width={22} />
+        <StatCell value={formatGD(row.goalDifference)} width={32} />
+        <StatCell value={row.goalsFor} width={22} />
+        <StatCell value={row.goalsAgainst} width={22} />
+        <StatCell value={row.yellowCards} width={22} color="#FFD700" />
+        <StatCell value={row.redCards} width={22} color="#f44336" />
+      </Box>
+
+      {/* Mobile: just W/D/L */}
+      <Box sx={{ display: { xs: 'flex', sm: 'none' }, gap: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
           {row.won}W·{row.drawn}D·{row.lost}L
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {formatGD(row.goalDifference)}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {row.goalsFor}gf
         </Typography>
       </Box>
 
@@ -247,20 +321,13 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
   )
 }
 
-function SectionHeader({ title }: { title: string }) {
+function StatCell({ value, width, color }: { value: string | number; width: number; color?: string }) {
   return (
     <Typography
-      variant="overline"
-      sx={{
-        fontSize: '0.7rem',
-        letterSpacing: 1.5,
-        color: 'text.secondary',
-        fontWeight: 700,
-        display: 'block',
-        mb: 1,
-      }}
+      variant="caption"
+      sx={{ minWidth: width, textAlign: 'right', color: color ?? 'text.secondary' }}
     >
-      {title}
+      {value}
     </Typography>
   )
 }
@@ -268,17 +335,40 @@ function SectionHeader({ title }: { title: string }) {
 // ─── HomePage ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { matches, loading } = useScores()
+  const { matches, loading, isSyncing, lastUpdated } = useScores()
   const polling = PollingService.getInstance()
+
+  const [sortKey, setSortKey] = useState<SortKey>('points')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [, setTick] = useState(0)
 
   useEffect(() => {
     polling.start()
     return () => polling.stop()
   }, [polling])
 
+  // Tick every 10s to refresh "last updated X ago" display
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 10_000)
+    return () => clearInterval(id)
+  }, [])
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))
+    } else {
+      setSortKey(key)
+      setSortDir('desc')
+    }
+  }
+
   const liveMatches = matches.filter((m) => m.status === 'IN_PLAY' || m.status === 'PAUSED')
-  const todayAndLive = sortMatchesForHome(getTodayAndLiveMatches(matches))
-  const rows = poolService.computeLeaderboard(matches)
+  const todayMatches = getTodayAndLiveMatches(matches)
+
+  const baseRows = poolService.computeLeaderboard(matches)
+  const rows = sortKey === 'points'
+    ? baseRows  // keep default sort (includes tiebreakers) when sorting by points
+    : sortRows(baseRows, sortKey, sortDir)
 
   const playedTeams = new Set<string>()
   for (const m of matches) {
@@ -299,27 +389,55 @@ export default function HomePage() {
     )
   }
 
+  const headerProps = { current: sortKey, dir: sortDir, onSort: handleSort }
+
   return (
     <Box sx={{ p: 2, pb: 4, maxWidth: 720, mx: 'auto' }}>
       {/* Live / today section */}
       {liveMatches.length > 0 ? (
         <>
-          <SectionHeader title={`🔴 Live Now · ${liveMatches.length} match${liveMatches.length > 1 ? 'es' : ''}`} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main', animation: 'livePulse 1.5s ease-in-out infinite' }} />
+            <Typography variant="overline" sx={{ fontSize: '0.7rem', letterSpacing: 1.5, color: 'error.main', fontWeight: 700 }}>
+              Live Now · {liveMatches.length} match{liveMatches.length > 1 ? 'es' : ''}
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             {sortMatchesForHome(liveMatches).map((m) => (
               <LiveMatchCard key={m.id} match={m} />
             ))}
           </Box>
+          {todayMatches.filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED').length > 0 && (
+            <>
+              <Typography variant="overline" sx={{ fontSize: '0.7rem', letterSpacing: 1.5, color: 'text.secondary', fontWeight: 700, display: 'block', mb: 1 }}>
+                Also Today
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
+                {sortMatchesForHome(todayMatches.filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED')).map((m) => (
+                  <LiveMatchCard key={m.id} match={m} />
+                ))}
+              </Box>
+            </>
+          )}
         </>
-      ) : todayAndLive.length > 0 ? (
+      ) : todayMatches.length > 0 ? (
         <>
-          <SectionHeader title="Today's Matches" />
+          <Typography variant="overline" sx={{ fontSize: '0.7rem', letterSpacing: 1.5, color: 'text.secondary', fontWeight: 700, display: 'block', mb: 1 }}>
+            Today&apos;s Matches
+          </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-            {todayAndLive.map((m) => (
+            {sortMatchesForHome(todayMatches).map((m) => (
               <LiveMatchCard key={m.id} match={m} />
             ))}
           </Box>
         </>
+      ) : isSyncing ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, py: 2 }}>
+          <CircularProgress size={18} />
+          <Typography variant="body2" color="text.secondary">
+            Fetching live scores…
+          </Typography>
+        </Box>
       ) : (
         <Box sx={{ mb: 3, py: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
@@ -328,26 +446,49 @@ export default function HomePage() {
         </Box>
       )}
 
-      <Divider sx={{ mb: 2.5 }} />
+      <Divider sx={{ mb: 2 }} />
 
       {/* Pool standings */}
-      <SectionHeader title="Pool Standings" />
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant="overline" sx={{ fontSize: '0.7rem', letterSpacing: 1.5, color: 'text.secondary', fontWeight: 700 }}>
+          Pool Standings
+        </Typography>
+        {lastUpdated && (
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+            Updated {formatLastUpdated(lastUpdated)}
+          </Typography>
+        )}
+      </Box>
 
       {rows.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          Standings will appear once matches are played.
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2 }}>
+          <CircularProgress size={16} />
+          <Typography variant="body2" color="text.secondary">
+            Loading standings…
+          </Typography>
+        </Box>
       ) : (
         <>
-          {/* Column headers */}
+          {/* Column headers (desktop only) */}
           <Box sx={{ display: { xs: 'none', sm: 'flex' }, px: 1.5, mb: 0.5, gap: 1, alignItems: 'center' }}>
             <Typography variant="caption" color="text.secondary" sx={{ minWidth: 22 }}>#</Typography>
             <Box sx={{ width: 8 }} />
-            <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>Player</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ flex: 1, minWidth: 80 }}>Player</Typography>
             <Typography variant="caption" color="text.secondary" sx={{ minWidth: 50 }}>Teams</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ minWidth: 120, textAlign: 'right' }}>W·D·L · GD · GF</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ minWidth: 28, textAlign: 'right' }}>Pts</Typography>
+            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
+              <SortableHeader label="P" sortKey="played" {...headerProps} minWidth={22} />
+              <SortableHeader label="W" sortKey="won" {...headerProps} minWidth={22} />
+              <SortableHeader label="D" sortKey="drawn" {...headerProps} minWidth={22} />
+              <SortableHeader label="L" sortKey="lost" {...headerProps} minWidth={22} />
+              <SortableHeader label="GD" sortKey="goalDifference" {...headerProps} minWidth={32} />
+              <SortableHeader label="GF" sortKey="goalsFor" {...headerProps} minWidth={22} />
+              <SortableHeader label="GA" sortKey="goalsAgainst" {...headerProps} minWidth={22} />
+              <SortableHeader label="🟨" sortKey="yellowCards" {...headerProps} minWidth={22} />
+              <SortableHeader label="🟥" sortKey="redCards" {...headerProps} minWidth={22} />
+            </Box>
+            <SortableHeader label="Pts" sortKey="points" {...headerProps} minWidth={28} />
           </Box>
+
           {rows.map((row) => (
             <StandingsRow key={row.member.id} row={row} playedTeams={playedTeams} />
           ))}

@@ -15,6 +15,13 @@ export interface Goal {
   team: 'home' | 'away'
 }
 
+export interface Booking {
+  minute: number | string
+  team: 'home' | 'away'
+  card: 'YELLOW' | 'RED' | 'YELLOW_RED'
+  player: string | null
+}
+
 export interface Match {
   id: number
   homeTeam: Team
@@ -26,6 +33,7 @@ export interface Match {
   stage: string       // e.g. "GROUP_STAGE", "ROUND_OF_16"
   group?: string      // e.g. "Group A"
   goals: Goal[]
+  bookings: Booking[]
   minute?: number | null   // live match minute
 }
 
@@ -47,6 +55,8 @@ export interface LeaderboardRow {
   goalsFor: number
   goalsAgainst: number
   goalDifference: number
+  yellowCards: number
+  redCards: number
   rank: number
 }
 

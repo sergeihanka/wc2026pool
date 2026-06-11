@@ -109,6 +109,9 @@ function StatsGrid({
         { label: 'GD', value: formatGD(row.goalDifference) },
         { label: 'GF', value: String(row.goalsFor) },
         { label: 'GA', value: String(row.goalsAgainst) },
+        { label: '🟨 Yellow', value: String(row.yellowCards) },
+        { label: '🟥 Red', value: String(row.redCards) },
+        { label: 'Played', value: String(row.played) },
       ]
     : []
 

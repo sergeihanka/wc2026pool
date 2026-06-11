@@ -8,6 +8,7 @@ interface UseScoresResult {
   loading: boolean
   error: string | null
   lastUpdated: Date | null
+  isSyncing: boolean
 }
 
 export function useScores(): UseScoresResult {
@@ -15,6 +16,7 @@ export function useScores(): UseScoresResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [isSyncing, setIsSyncing] = useState(true)
 
   const lastFetchTimeRef = useRef<Date | null>(null)
   const polling = PollingService.getInstance()
@@ -27,9 +29,11 @@ export function useScores(): UseScoresResult {
       const data = await Promise.race([poolService.getAllMatches(), timeout])
       setMatches(data)
       setError(null)
+      if (data.length > 0) setIsSyncing(false)
     } catch (err) {
       console.error('[useScores] fetchMatches failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to load matches')
+      setIsSyncing(false)
     } finally {
       setLoading(false)
     }
@@ -40,8 +44,8 @@ export function useScores(): UseScoresResult {
     void fetchMatches()
   }, [])
 
-  // Poll getLastFetchTime() every second — re-fetch matches whenever the
-  // PollingService writes new data to Supabase (lastFetchTime advances).
+  // Poll PollingService.lastFetchTime every second — re-fetch from Supabase
+  // whenever the poller writes fresh data.
   useEffect(() => {
     const intervalId = setInterval(() => {
       const current = polling.getLastFetchTime()
@@ -57,5 +61,13 @@ export function useScores(): UseScoresResult {
     return () => clearInterval(intervalId)
   }, [polling])
 
-  return { matches, loading, error, lastUpdated }
+  // When cache is empty after initial load, retry Supabase every 3 seconds
+  // until data arrives (poller is filling it in the background).
+  useEffect(() => {
+    if (loading || matches.length > 0) return
+    const retryId = setInterval(() => void fetchMatches(), 3_000)
+    return () => clearInterval(retryId)
+  }, [loading, matches.length])
+
+  return { matches, loading, error, lastUpdated, isSyncing }
 }

@@ -10,12 +10,12 @@
  * Visibility: pauses when tab is hidden, resumes immediately on visibility.
  */
 
-import type { Match, Goal } from '@/types'
+import type { Match, Goal, Booking } from '@/types'
 import { FootballDataService } from './FootballDataService'
 import { supabase } from '@/lib/supabase'
 
 const LIVE_STATUSES = new Set(['IN_PLAY', 'PAUSED'])
-const INTERVAL_LIVE_MS = 30_000       // 30 seconds
+const INTERVAL_LIVE_MS = 15_000       // 15 seconds
 const INTERVAL_IDLE_MS = 5 * 60_000  // 5 minutes
 const RATE_LIMIT_WINDOW_MS = 60_000   // 1 minute
 const RATE_LIMIT_MAX_CALLS = 8
@@ -32,6 +32,7 @@ interface MatchDbRow {
   match_group: string | null
   utc_date: string
   goals: Goal[]
+  bookings: Booking[]
   live_minute: number | null
   updated_at: string
 }
@@ -48,6 +49,7 @@ function matchToDbRow(match: Match): MatchDbRow {
     match_group: match.group ?? null,
     utc_date: match.utcDate,
     goals: match.goals,
+    bookings: match.bookings ?? [],
     live_minute: match.minute ?? null,
     updated_at: new Date().toISOString(),
   }
