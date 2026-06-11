@@ -58,13 +58,13 @@ interface ApiMatch {
 export default async function handler(_req: Request, _context: Context): Promise<Response> {
   const supabaseUrl = process.env['SUPABASE_URL']
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
-  const apiKey = process.env['FOOTBALL_API_KEY']
+  const apiKey = process.env['VITE_FOOTBALL_API_KEY']
 
   if (!supabaseUrl || !supabaseKey || !apiKey) {
     const missing = [
       !supabaseUrl && 'SUPABASE_URL',
       !supabaseKey && 'SUPABASE_SERVICE_ROLE_KEY',
-      !apiKey && 'FOOTBALL_API_KEY',
+      !apiKey && 'VITE_FOOTBALL_API_KEY',
     ].filter(Boolean).join(', ')
     console.error('[poll-scores] Missing env vars:', missing)
     return Response.json({ error: `Missing env vars: ${missing}` }, { status: 500 })
