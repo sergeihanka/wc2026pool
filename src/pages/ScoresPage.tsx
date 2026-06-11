@@ -7,6 +7,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Divider from '@mui/material/Divider'
 import { PollingService } from '@/services/PollingService'
 import { useScores } from '@/hooks/useScores'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { MatchCard } from '@/components/MatchCard'
 import type { Match, MatchStatus } from '@/types'
 
@@ -65,8 +66,15 @@ function formatStaleness(lastUpdated: Date): string {
 
 // ─── ScoresPage ───────────────────────────────────────────────────────────────
 
+const STALENESS_THRESHOLD_MS = 10 * 60_000 // 10 minutes
+
+function isStalenessWarning(lastUpdated: Date, isOnline: boolean): boolean {
+  return isOnline && Date.now() - lastUpdated.getTime() > STALENESS_THRESHOLD_MS
+}
+
 export default function ScoresPage() {
   const { matches, loading, error, lastUpdated } = useScores()
+  const { isOnline } = useNetworkStatus()
   const polling = PollingService.getInstance()
 
   useEffect(() => {
@@ -112,11 +120,23 @@ export default function ScoresPage() {
   const grouped = groupByDate(matches)
   const sortedDates = Array.from(grouped.keys()).sort()
 
+  const stalenessColor =
+    lastUpdated && isStalenessWarning(lastUpdated, isOnline)
+      ? 'warning.main'
+      : 'text.secondary'
+
   return (
     <Box sx={{ pb: 8 }}>
+      {/* Offline banner */}
+      {!isOnline && (
+        <Alert severity="warning" sx={{ mx: 2, mt: 1 }}>
+          You're offline — showing cached data
+        </Alert>
+      )}
+
       {/* Staleness indicator */}
       <Box sx={{ px: 2, py: 1, textAlign: 'right' }}>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color={stalenessColor}>
           {lastUpdated ? formatStaleness(lastUpdated) : 'Updating…'}
         </Typography>
       </Box>

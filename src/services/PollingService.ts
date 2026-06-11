@@ -67,6 +67,8 @@ export class PollingService {
   // IDs of FINISHED matches already written to cache — skip re-writing them
   private finishedCached = new Set<number>()
 
+  private previousMatches = new Map<number, Match>()
+
   // Exponential back-off state for RATE_LIMIT errors from the upstream API
   private rateLimitBackoffMs = 60_000
   private isInRateLimitBackoff = false
@@ -179,6 +181,7 @@ export class PollingService {
       }
 
       await this.upsertToCache(matches)
+      this.detectAndNotify(matches)
     } catch (err: unknown) {
       if (isFootballDataRateLimitError(err)) {
         console.error('[PollingService] Rate limit hit from upstream API. Backing off for', this.rateLimitBackoffMs, 'ms')
@@ -212,6 +215,82 @@ export class PollingService {
       await new Promise((resolve) => setTimeout(resolve, waitMs))
     }
     this.requestTimestamps.push(Date.now())
+  }
+
+  // ─── Notification detection ──────────────────────────────────────────────────
+
+  private detectAndNotify(newMatches: Match[]): void {
+    if (typeof fetch === 'undefined') return
+
+    const isFirstFetch = this.previousMatches.size === 0
+
+    for (const match of newMatches) {
+      const prev = this.previousMatches.get(match.id)
+
+      if (!isFirstFetch && prev) {
+        if (
+          (prev.status === 'IN_PLAY' || prev.status === 'PAUSED') &&
+          match.status === 'FINISHED'
+        ) {
+          this.postNotification({
+            matchId: match.id,
+            type: 'FULLTIME',
+            teamShortCode: match.homeTeam.shortCode,
+            homeTeam: match.homeTeam.name,
+            awayTeam: match.awayTeam.name,
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+          })
+        } else if (
+          (prev.status === 'SCHEDULED' || prev.status === 'TIMED') &&
+          match.status === 'IN_PLAY'
+        ) {
+          this.postNotification({
+            matchId: match.id,
+            type: 'KICKOFF',
+            teamShortCode: match.homeTeam.shortCode,
+            homeTeam: match.homeTeam.name,
+            awayTeam: match.awayTeam.name,
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+          })
+        }
+
+        if (match.goals.length > prev.goals.length) {
+          const prevKeys = new Set(
+            prev.goals.map((g) => `${g.scorer}|${g.minute}|${g.team}`)
+          )
+          const newGoals = match.goals.filter(
+            (g) => !prevKeys.has(`${g.scorer}|${g.minute}|${g.team}`)
+          )
+          for (const goal of newGoals) {
+            this.postNotification({
+              matchId: match.id,
+              type: 'GOAL',
+              teamShortCode: goal.team === 'home' ? match.homeTeam.shortCode : match.awayTeam.shortCode,
+              minute: goal.minute as number,
+              scorer: goal.scorer ?? undefined,
+              homeTeam: match.homeTeam.name,
+              awayTeam: match.awayTeam.name,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+            })
+          }
+        }
+      }
+    }
+
+    this.previousMatches = new Map(newMatches.map((m) => [m.id, m]))
+  }
+
+  private postNotification(payload: Record<string, unknown>): void {
+    fetch('/api/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch((err) => {
+      console.error('[PollingService] Notification error:', err)
+    })
   }
 
   // ─── Supabase upsert ─────────────────────────────────────────────────────────

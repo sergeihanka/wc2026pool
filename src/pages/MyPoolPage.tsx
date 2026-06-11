@@ -14,8 +14,11 @@ import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
 import { useAuth } from '@/hooks/useAuth'
 import { poolService } from '@/services/PoolService'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import type { Match, LeaderboardRow } from '@/types'
 
 const RANK_COLORS: Record<number, string> = {
@@ -335,6 +338,74 @@ function StandingsTable({ rows, currentMemberId }: StandingsTableProps) {
   )
 }
 
+interface NotificationToggleProps {
+  memberId: string
+}
+
+function NotificationToggle({ memberId }: NotificationToggleProps) {
+  const { state, subscribe, unsubscribe } = usePushNotifications(memberId)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const handleSubscribe = async () => {
+    setActionLoading(true)
+    await subscribe()
+    setActionLoading(false)
+  }
+
+  const handleUnsubscribe = async () => {
+    setActionLoading(true)
+    await unsubscribe()
+    setActionLoading(false)
+  }
+
+  return (
+    <Paper sx={{ p: 2, mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+        <Box>
+          <Typography variant="body1" sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, lineHeight: 1.2 }}>
+            🔔 Goal &amp; Match Alerts
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Get notified when your teams score
+          </Typography>
+        </Box>
+
+        {!state.isSupported ? (
+          <Typography variant="caption" color="text.secondary">
+            Push notifications not supported on this browser
+          </Typography>
+        ) : state.isLoading ? (
+          <CircularProgress size={24} />
+        ) : state.isSubscribed ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip label="Active" size="small" color="success" />
+            <Button
+              variant="outlined"
+              size="small"
+              color="success"
+              disabled={actionLoading}
+              onClick={() => { void handleUnsubscribe() }}
+              startIcon={actionLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
+            >
+              Disable notifications
+            </Button>
+          </Box>
+        ) : (
+          <Button
+            variant="contained"
+            size="small"
+            disabled={actionLoading}
+            onClick={() => { void handleSubscribe() }}
+            startIcon={actionLoading ? <CircularProgress size={14} color="inherit" /> : undefined}
+          >
+            Enable notifications
+          </Button>
+        )}
+      </Box>
+    </Paper>
+  )
+}
+
 function PageSkeleton() {
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 720, mx: 'auto' }}>
@@ -429,6 +500,8 @@ export default function MyPoolPage() {
               <StatCard row={myRow} />
             </>
           )}
+
+          <NotificationToggle memberId={currentMember.id} />
 
           <Typography
             variant="h6"
