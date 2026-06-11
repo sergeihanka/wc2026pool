@@ -13,6 +13,7 @@ import SportsIcon from '@mui/icons-material/Sports'
 import type { Match } from '@/types'
 import { poolService } from '@/services/PoolService'
 import { supabase } from '@/lib/supabase'
+import { teamFlag } from '@/lib/flags'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import { POOL_MEMBERS } from '@/config/pool'
 
@@ -160,7 +161,7 @@ function PoolMemberIndicator({ match }: { match: Match }) {
                   {member.avatarInitials}
                 </Avatar>
               }
-              label={`${member.displayName} · ${memberTeams.join(', ')}`}
+              label={`${member.displayName} · ${memberTeams.map(t => teamFlag(t)).join(' ')}`}
               size="small"
               variant="outlined"
               sx={{ borderColor: 'divider' }}
@@ -315,7 +316,7 @@ export default function MatchDetailPage() {
                 variant="h4"
                 sx={{ flex: 1, textAlign: 'right', fontWeight: 700 }}
               >
-                {match.homeTeam.shortCode || match.homeTeam.name.slice(0, 3).toUpperCase()}
+                {teamFlag(match.homeTeam.shortCode || match.homeTeam.name.slice(0, 3).toUpperCase())}
               </Typography>
 
               <Typography
@@ -331,7 +332,7 @@ export default function MatchDetailPage() {
                 variant="h4"
                 sx={{ flex: 1, textAlign: 'left', fontWeight: 700 }}
               >
-                {match.awayTeam.shortCode || match.awayTeam.name.slice(0, 3).toUpperCase()}
+                {teamFlag(match.awayTeam.shortCode || match.awayTeam.name.slice(0, 3).toUpperCase())}
               </Typography>
             </Box>
 

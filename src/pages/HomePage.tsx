@@ -14,6 +14,7 @@ import { PollingService } from '@/services/PollingService'
 import { poolService } from '@/services/PoolService'
 import { useScores } from '@/hooks/useScores'
 import { POOL_MEMBERS } from '@/config/pool'
+import { teamFlag } from '@/lib/flags'
 import type { Match, PoolMember, LeaderboardRow } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -109,9 +110,9 @@ function MemberStakes({ match }: { match: Match }) {
               {involvedTeams.map((t) => (
                 <Chip
                   key={t}
-                  label={t}
+                  label={teamFlag(t)}
                   size="small"
-                  sx={{ height: 18, fontSize: '0.6rem', bgcolor: m.color, color: '#fff' }}
+                  sx={{ height: 22, fontSize: '1rem', bgcolor: m.color, color: '#fff' }}
                 />
               ))}
             </Box>
@@ -152,14 +153,14 @@ function LiveMatchCard({ match }: { match: Match }) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
-        <Typography variant="h5" sx={{ flex: 1, textAlign: 'right', fontWeight: 700 }}>
-          {homeCode}
+        <Typography variant="h5" sx={{ flex: 1, textAlign: 'right', fontWeight: 700, fontSize: '2rem' }}>
+          {teamFlag(homeCode)}
         </Typography>
         <Typography variant="h4" sx={{ fontWeight: 700, minWidth: 80, textAlign: 'center', letterSpacing: 2 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
-        <Typography variant="h5" sx={{ flex: 1, textAlign: 'left', fontWeight: 700 }}>
-          {awayCode}
+        <Typography variant="h5" sx={{ flex: 1, textAlign: 'left', fontWeight: 700, fontSize: '2rem' }}>
+          {teamFlag(awayCode)}
         </Typography>
       </Box>
 
@@ -271,11 +272,11 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         {row.member.teams.map((code) => (
           <Chip
             key={code}
-            label={code}
+            label={teamFlag(code)}
             size="small"
             sx={{
-              fontSize: '0.6rem',
-              height: 18,
+              fontSize: '1rem',
+              height: 22,
               bgcolor: playedTeams.has(code) ? row.member.color : 'transparent',
               color: playedTeams.has(code) ? '#fff' : 'text.disabled',
               border: '1px solid',

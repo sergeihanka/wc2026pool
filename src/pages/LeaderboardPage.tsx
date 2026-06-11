@@ -7,6 +7,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import { Flipper, Flipped } from 'react-flip-toolkit'
 import { poolService } from '@/services/PoolService'
+import { teamFlag } from '@/lib/flags'
 import type { LeaderboardRow, Match } from '@/types'
 
 const RANK_COLORS: Record<number, string> = {
@@ -140,11 +141,11 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
         {row.member.teams.map((code) => (
           <Chip
             key={code}
-            label={code}
+            label={teamFlag(code)}
             size="small"
             sx={{
-              fontSize: '0.65rem',
-              height: 20,
+              fontSize: '1rem',
+              height: 22,
               bgcolor: playedTeams.has(code) ? 'primary.main' : 'transparent',
               color: playedTeams.has(code) ? '#fff' : 'text.disabled',
               border: '1px solid',

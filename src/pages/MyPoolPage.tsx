@@ -12,6 +12,7 @@ import Tooltip from '@mui/material/Tooltip'
 import { useAuth } from '@/hooks/useAuth'
 import { poolService } from '@/services/PoolService'
 import { POOL_MEMBERS } from '@/config/pool'
+import { teamFlag } from '@/lib/flags'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import type { Match, PoolMember, LeaderboardRow } from '@/types'
 
@@ -139,9 +140,9 @@ function StatsGrid({
             {member.teams.map((t) => (
               <Chip
                 key={t}
-                label={t}
+                label={teamFlag(t)}
                 size="small"
-                sx={{ fontSize: '0.65rem', height: 18, bgcolor: member.color, color: '#fff' }}
+                sx={{ fontSize: '1rem', height: 22, bgcolor: member.color, color: '#fff' }}
               />
             ))}
           </Box>
@@ -212,7 +213,7 @@ function TeamSection({
           }}
         >
           <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
-            {teamCode}
+            {teamFlag(teamCode)} {teamCode}
           </Typography>
         </Box>
         <Typography variant="caption" color="text.secondary">
@@ -242,7 +243,7 @@ function TeamSection({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
               <StatusChip match={m} />
               <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '1rem' }}>
-                {isHome ? `${teamCode} ${m.homeScore ?? 0} – ${m.awayScore ?? 0} ${opp}` : `${opp} ${m.awayScore ?? 0} – ${m.homeScore ?? 0} ${teamCode}`}
+                {isHome ? `${teamFlag(teamCode)} ${m.homeScore ?? 0} – ${m.awayScore ?? 0} ${teamFlag(opp)}` : `${teamFlag(opp)} ${m.awayScore ?? 0} – ${m.homeScore ?? 0} ${teamFlag(teamCode)}`}
               </Typography>
               {m.minute != null && (
                 <Typography variant="caption" color="error.main" sx={{ fontWeight: 700 }}>
@@ -287,7 +288,7 @@ function TeamSection({
                     {isHome ? 'vs' : '@'}
                   </Typography>
                   <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 600, flex: 1, fontSize: '0.9rem' }}>
-                    {opp}
+                    {teamFlag(opp)}
                   </Typography>
                   <Typography variant="caption" color="primary.main">
                     {formatKickoff(m.utcDate)}
@@ -342,7 +343,7 @@ function TeamSection({
                     {isHome ? 'vs' : '@'}
                   </Typography>
                   <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 600, flex: 1, fontSize: '0.9rem' }}>
-                    {opp}
+                    {teamFlag(opp)}
                   </Typography>
                   <Typography
                     sx={{

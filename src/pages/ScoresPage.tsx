@@ -15,6 +15,7 @@ import { useScores } from '@/hooks/useScores'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import { POOL_MEMBERS } from '@/config/pool'
+import { teamFlag } from '@/lib/flags'
 import type { Match, MatchStatus, PoolMember } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -100,14 +101,14 @@ function ScheduleMatchCard({ match }: { match: Match }) {
 
       {/* Score row */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
-        <Typography variant="h6" sx={{ flex: 1, textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>
-          {homeCode}
+        <Typography variant="h6" sx={{ flex: 1, textAlign: 'right', fontWeight: 700, fontSize: '1.5rem' }}>
+          {teamFlag(homeCode)}
         </Typography>
         <Typography variant="h5" sx={{ fontWeight: 700, minWidth: 72, textAlign: 'center', letterSpacing: 2 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
-        <Typography variant="h6" sx={{ flex: 1, textAlign: 'left', fontWeight: 700, fontSize: '1.1rem' }}>
-          {awayCode}
+        <Typography variant="h6" sx={{ flex: 1, textAlign: 'left', fontWeight: 700, fontSize: '1.5rem' }}>
+          {teamFlag(awayCode)}
         </Typography>
       </Box>
 
@@ -151,9 +152,9 @@ function ScheduleMatchCard({ match }: { match: Match }) {
                 .map((t) => (
                   <Chip
                     key={`${m.id}-${t}`}
-                    label={t}
+                    label={teamFlag(t)}
                     size="small"
-                    sx={{ height: 18, fontSize: '0.6rem', bgcolor: m.color, color: '#fff' }}
+                    sx={{ height: 22, fontSize: '1rem', bgcolor: m.color, color: '#fff' }}
                   />
                 )),
             )}
