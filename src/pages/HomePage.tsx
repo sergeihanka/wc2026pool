@@ -335,7 +335,7 @@ function StatCell({ value, width, color }: { value: string | number; width: numb
 // ─── HomePage ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { matches, loading, isSyncing, lastUpdated } = useScores()
+  const { matches, loading, lastUpdated } = useScores()
   const polling = PollingService.getInstance()
 
   const [sortKey, setSortKey] = useState<SortKey>('points')
@@ -431,11 +431,11 @@ export default function HomePage() {
             ))}
           </Box>
         </>
-      ) : isSyncing ? (
+      ) : matches.length === 0 ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3, py: 2 }}>
           <CircularProgress size={18} />
           <Typography variant="body2" color="text.secondary">
-            Fetching live scores…
+            Loading tournament data…
           </Typography>
         </Box>
       ) : (

@@ -8,7 +8,6 @@ interface UseScoresResult {
   loading: boolean
   error: string | null
   lastUpdated: Date | null
-  isSyncing: boolean
 }
 
 export function useScores(): UseScoresResult {
@@ -16,10 +15,9 @@ export function useScores(): UseScoresResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [isSyncing, setIsSyncing] = useState(true)
 
-  // Track whether we've ever received data so we can show the right empty state.
-  const hasDataRef = useRef(false)
+  // Prevent triggering the server-side poller more than once per session.
+  const didTriggerPollRef = useRef(false)
 
   async function fetchMatches() {
     try {
@@ -30,14 +28,11 @@ export function useScores(): UseScoresResult {
       setMatches(data)
       setError(null)
       if (data.length > 0) {
-        hasDataRef.current = true
-        setIsSyncing(false)
         setLastUpdated(new Date())
       }
     } catch (err) {
       console.error('[useScores] fetchMatches failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to load matches')
-      setIsSyncing(false)
     } finally {
       setLoading(false)
     }
@@ -79,13 +74,18 @@ export function useScores(): UseScoresResult {
     return () => clearInterval(id)
   }, [])
 
-  // Aggressive retry while cache is empty (e.g. right after a TRUNCATE).
-  // Stops as soon as we receive any data.
+  // When the cache is empty after the initial load, kick the server-side
+  // poll-scores function once so it populates Supabase immediately, then retry
+  // reading every 3 s until data arrives via Realtime or the fallback poll.
   useEffect(() => {
     if (loading || matches.length > 0) return
+    if (!didTriggerPollRef.current) {
+      didTriggerPollRef.current = true
+      fetch('/.netlify/functions/poll-scores').catch(() => {})
+    }
     const id = setInterval(() => void fetchMatches(), 3_000)
     return () => clearInterval(id)
   }, [loading, matches.length])
 
-  return { matches, loading, error, lastUpdated, isSyncing }
+  return { matches, loading, error, lastUpdated }
 }

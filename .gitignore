@@ -36,3 +36,6 @@ local-env/
 
 # TypeScript build info
 *.tsbuildinfo
+
+.claude
+CLAUDE.md

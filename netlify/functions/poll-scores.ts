@@ -134,8 +134,6 @@ export default async function handler(_req: Request, _context: Context): Promise
   return json({ ok: true, total: matches.length, live, updatedAt: now })
 }
 
-// No schedule — invoked via HTTP by cron-job.org (supports every 30 s, free).
-// Remove this comment and uncomment the line below to also run via Netlify scheduler
-// (minimum every 1 minute on free tier):
-// export const config: Config = { schedule: '* * * * *' }
-export const config: Config = {}
+// Run every minute via Netlify's built-in scheduler (free tier, ~43k calls/month).
+// Also callable via HTTP GET /.netlify/functions/poll-scores for manual / cron-job.org use.
+export const config: Config = { schedule: '* * * * *' }
