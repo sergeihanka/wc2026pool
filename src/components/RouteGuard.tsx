@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useAuth } from '@/hooks/useAuth'
+import InstallBanner from '@/components/InstallBanner'
 
 /**
  * RouteGuard — wraps protected routes.
@@ -36,5 +37,10 @@ export default function RouteGuard() {
     return <Navigate to="/login" replace state={{ from: location }} />
   }
 
-  return <Outlet />
+  return (
+    <>
+      <InstallBanner />
+      <Outlet />
+    </>
+  )
 }

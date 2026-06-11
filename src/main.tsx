@@ -3,9 +3,11 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import OneSignal from 'react-onesignal'
 import { router } from './router'
 import theme from './theme'
 import { AuthProvider } from '@/context/AuthContext'
+import { ONESIGNAL_APP_ID } from '@/config/env'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,3 +19,13 @@ createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </StrictMode>,
 )
+
+// Initialize OneSignal non-blocking after React has rendered.
+// Only runs when an App ID is configured (skipped in unit-test environments).
+if (ONESIGNAL_APP_ID) {
+  OneSignal.init({
+    appId: ONESIGNAL_APP_ID,
+    allowLocalhostAsSecureOrigin: true,
+    serviceWorkerParam: { scope: '/' },
+  }).catch(console.error)
+}
