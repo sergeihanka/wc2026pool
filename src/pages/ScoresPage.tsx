@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -170,11 +170,19 @@ export default function ScoresPage() {
   const { matches, loading, error } = useScores()
   const { isOnline } = useNetworkStatus()
   const polling = PollingService.getInstance()
+  const todayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     polling.start()
     return () => polling.stop()
   }, [polling])
+
+  // Scroll to today's date group once data is loaded
+  useEffect(() => {
+    if (!loading && matches.length > 0 && todayRef.current) {
+      todayRef.current.scrollIntoView({ behavior: 'instant', block: 'start' })
+    }
+  }, [loading, matches.length])
 
   if (loading) {
     return (
@@ -211,8 +219,9 @@ export default function ScoresPage() {
     )
   }
 
+  const todayKey = new Date().toISOString().slice(0, 10)
   const grouped = groupByDate(matches)
-  const sortedDates = Array.from(grouped.keys()).sort().reverse()
+  const sortedDates = Array.from(grouped.keys()).sort()
 
   return (
     <Box sx={{ pb: 8 }}>
@@ -233,8 +242,9 @@ export default function ScoresPage() {
 
       {sortedDates.map((dateStr) => {
         const dayMatches = sortMatchesWithinGroup(grouped.get(dateStr)!)
+        const isToday = dateStr === todayKey
         return (
-          <Box key={dateStr}>
+          <Box key={dateStr} ref={isToday ? todayRef : undefined}>
             <Box sx={{ px: 2, pt: 2, pb: 0.5 }}>
               <Typography
                 variant="caption"
