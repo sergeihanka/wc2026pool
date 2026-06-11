@@ -37,6 +37,10 @@ export const SUPABASE_ANON_KEY = requireEnv('VITE_SUPABASE_ANON_KEY')
 export const FOOTBALL_API_KEY = optionalEnv('VITE_FOOTBALL_API_KEY')
 export const ONESIGNAL_APP_ID = optionalEnv('VITE_ONESIGNAL_APP_ID', true)
 
+// Non-secret constant — public URL, but must not be hardcoded in service code
+export const FOOTBALL_API_BASE_URL =
+  import.meta.env['VITE_FOOTBALL_API_BASE_URL'] ?? 'https://api.football-data.org/v4'
+
 /**
  * Returns all client-safe config values as a typed object.
  * Prefer named exports above; use this for cases that need the full config object.
@@ -46,6 +50,7 @@ export function getConfig() {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     FOOTBALL_API_KEY,
+    FOOTBALL_API_BASE_URL,
     ONESIGNAL_APP_ID,
   } as const
 }
