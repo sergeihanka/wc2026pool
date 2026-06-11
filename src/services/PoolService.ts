@@ -27,20 +27,49 @@ interface MatchDbRow {
   updated_at: string
 }
 
+// Maps full team names (as stored by PollingService) to FIFA short codes.
+// Covers all pool teams plus common opponents — falls back to first 3 chars.
+const TEAM_SHORT_CODES: Record<string, string> = {
+  // Pool teams
+  Argentina: 'ARG', Netherlands: 'NED', France: 'FRA', Croatia: 'CRO',
+  Spain: 'ESP', USA: 'USA', 'United States': 'USA', Portugal: 'POR',
+  Switzerland: 'SUI', England: 'ENG', Morocco: 'MAR', Brazil: 'BRA',
+  Uruguay: 'URU',
+  // Common opponents
+  Germany: 'GER', Mexico: 'MEX', Poland: 'POL', Senegal: 'SEN',
+  Australia: 'AUS', Japan: 'JPN', Ghana: 'GHA', 'South Korea': 'KOR',
+  Colombia: 'COL', Ecuador: 'ECU', Peru: 'PER', Chile: 'CHI',
+  Venezuela: 'VEN', Bolivia: 'BOL', Paraguay: 'PAR', Canada: 'CAN',
+  'Costa Rica': 'CRC', Panama: 'PAN', Jamaica: 'JAM', Honduras: 'HON',
+  'El Salvador': 'SLV', Haiti: 'HAI', Belgium: 'BEL', Italy: 'ITA',
+  Denmark: 'DEN', Sweden: 'SWE', Norway: 'NOR', Austria: 'AUT',
+  Serbia: 'SRB', Romania: 'ROU', Turkey: 'TUR', Ukraine: 'UKR',
+  Greece: 'GRE', Scotland: 'SCO', Wales: 'WAL', Ireland: 'IRL',
+  Hungary: 'HUN', Czechia: 'CZE', Slovakia: 'SVK', Slovenia: 'SVN',
+  Tunisia: 'TUN', Algeria: 'ALG', Egypt: 'EGY', Nigeria: 'NGA',
+  Cameroon: 'CMR', Mali: 'MLI', "Côte d'Ivoire": 'CIV',
+  'Saudi Arabia': 'KSA', Iran: 'IRN', China: 'CHN', Qatar: 'QAT',
+  Indonesia: 'IDN',
+}
+
+function resolveShortCode(name: string): string {
+  return TEAM_SHORT_CODES[name] ?? name.slice(0, 3).toUpperCase()
+}
+
 // ─── Mapping from DB row → Match ──────────────────────────────────────────────
 
 function dbRowToMatch(row: MatchDbRow): Match {
   return {
     id: row.id,
     homeTeam: {
-      id: 0, // not stored in cache — use 0 as sentinel
+      id: 0,
       name: row.home_team,
-      shortCode: '', // shortCode resolved via goals/pool config — not stored
+      shortCode: resolveShortCode(row.home_team),
     },
     awayTeam: {
       id: 0,
       name: row.away_team,
-      shortCode: '',
+      shortCode: resolveShortCode(row.away_team),
     },
     homeScore: row.home_score,
     awayScore: row.away_score,
