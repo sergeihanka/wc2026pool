@@ -34,6 +34,7 @@ export interface PoolMember {
   displayName: string
   teams: string[]        // FIFA short codes, exactly 2
   avatarInitials: string // e.g. "SH"
+  color: string          // member's UI color e.g. "#1976D2"
 }
 
 export interface LeaderboardRow {

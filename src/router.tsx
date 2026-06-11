@@ -1,8 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import RouteGuard from '@/components/RouteGuard'
 import LoginPage from '@/pages/LoginPage'
+import HomePage from '@/pages/HomePage'
 import ScoresPage from '@/pages/ScoresPage'
-import LeaderboardPage from '@/pages/LeaderboardPage'
 import MatchDetailPage from '@/pages/MatchDetailPage'
 import MyPoolPage from '@/pages/MyPoolPage'
 
@@ -12,17 +12,14 @@ export const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
-    path: '/',
-    element: <Navigate to="/scores" replace />,
-  },
-  {
     element: <RouteGuard />,
     children: [
+      { path: '/', element: <HomePage /> },
       { path: '/scores', element: <ScoresPage /> },
       { path: '/scores/:matchId', element: <MatchDetailPage /> },
       { path: '/matches/:matchId', element: <MatchDetailPage /> },
       { path: '/my-pool', element: <MyPoolPage /> },
-      { path: '/leaderboard', element: <LeaderboardPage /> },
+      { path: '/leaderboard', element: <Navigate to="/" replace /> },
     ],
   },
 ])

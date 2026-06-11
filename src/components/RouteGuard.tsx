@@ -4,33 +4,24 @@ import CircularProgress from '@mui/material/CircularProgress'
 import BottomNavigation from '@mui/material/BottomNavigation'
 import BottomNavigationAction from '@mui/material/BottomNavigationAction'
 import Paper from '@mui/material/Paper'
-import SportsIcon from '@mui/icons-material/Sports'
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'
+import HomeIcon from '@mui/icons-material/Home'
 import GroupsIcon from '@mui/icons-material/Groups'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import { useAuth } from '@/hooks/useAuth'
 import InstallBanner from '@/components/InstallBanner'
 
 const NAV_ITEMS = [
-  { label: 'Scores', value: '/scores', icon: <SportsIcon /> },
-  { label: 'Standings', value: '/leaderboard', icon: <EmojiEventsIcon /> },
+  { label: 'Home', value: '/', icon: <HomeIcon /> },
   { label: 'My Pool', value: '/my-pool', icon: <GroupsIcon /> },
+  { label: 'Schedule', value: '/scores', icon: <CalendarMonthIcon /> },
 ]
 
 function resolveNavValue(pathname: string): string {
-  if (pathname.startsWith('/leaderboard')) return '/leaderboard'
   if (pathname.startsWith('/my-pool')) return '/my-pool'
-  return '/scores'
+  if (pathname.startsWith('/scores') || pathname.startsWith('/matches')) return '/scores'
+  return '/'
 }
 
-/**
- * RouteGuard — wraps protected routes.
- *
- * Behaviour:
- * - While auth is resolving (isLoading): shows a centred spinner — no redirect.
- * - Unauthenticated: redirects to /login, passing the current location as state.from
- *   so LoginPage can navigate back after a successful sign-in.
- * - Authenticated: renders child routes with a persistent bottom navigation bar.
- */
 export default function RouteGuard() {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
