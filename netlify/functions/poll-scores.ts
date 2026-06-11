@@ -14,7 +14,7 @@
 import type { Config, Context } from '@netlify/functions'
 import { createClient } from '@supabase/supabase-js'
 
-interface ApiTeam { id: number; name: string; tla: string }
+interface ApiTeam { id: number | null; name: string | null; tla: string | null }
 interface ApiGoal  { minute: number | string | null; scorer: { name: string } | null; team: { id: number } }
 interface ApiBooking { minute: number | string | null; team: { id: number }; card: string; player?: { name: string } | null }
 interface ApiMatch {
@@ -86,8 +86,8 @@ export default async function handler(_req: Request, _context: Context): Promise
 
   const baseRows = matches.map((m) => ({
     id: m.id,
-    home_team: m.homeTeam.name,
-    away_team: m.awayTeam.name,
+    home_team: m.homeTeam.name ?? 'TBD',
+    away_team: m.awayTeam.name ?? 'TBD',
     home_score: m.score.fullTime.home,
     away_score: m.score.fullTime.away,
     status: m.status === 'TIMED' ? 'SCHEDULED' : m.status,
@@ -97,7 +97,7 @@ export default async function handler(_req: Request, _context: Context): Promise
     goals: (m.goals ?? []).map((g) => ({
       scorer: g.scorer?.name ?? null,
       minute: g.minute ?? 0,
-      team: g.team.id === m.homeTeam.id ? 'home' : 'away',
+      team: m.homeTeam.id !== null && g.team.id === m.homeTeam.id ? 'home' : 'away',
     })),
     live_minute: m.minute ?? null,
     updated_at: now,
@@ -108,7 +108,7 @@ export default async function handler(_req: Request, _context: Context): Promise
     ...row,
     bookings: (matches[i].bookings ?? []).map((b) => ({
       minute: b.minute ?? 0,
-      team: b.team.id === matches[i].homeTeam.id ? 'home' : 'away',
+      team: matches[i].homeTeam.id !== null && b.team.id === matches[i].homeTeam.id ? 'home' : 'away',
       card: b.card,
       player: b.player?.name ?? null,
     })),

@@ -47,8 +47,8 @@ if (matches.length === 0) {
 const now = new Date().toISOString()
 const rows = matches.map(m => ({
   id: m.id,
-  home_team: m.homeTeam.name,
-  away_team: m.awayTeam.name,
+  home_team: m.homeTeam?.name ?? 'TBD',
+  away_team: m.awayTeam?.name ?? 'TBD',
   home_score: m.score.fullTime.home,
   away_score: m.score.fullTime.away,
   status: m.status === 'TIMED' ? 'SCHEDULED' : m.status,
@@ -58,7 +58,7 @@ const rows = matches.map(m => ({
   goals: (m.goals ?? []).map(g => ({
     scorer: g.scorer?.name ?? null,
     minute: g.minute ?? 0,
-    team: g.team.id === m.homeTeam.id ? 'home' : 'away',
+    team: m.homeTeam?.id != null && g.team.id === m.homeTeam.id ? 'home' : 'away',
   })),
   live_minute: m.minute ?? null,
   updated_at: now,
