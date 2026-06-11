@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Paper from '@mui/material/Paper'
-import Avatar from '@mui/material/Avatar'
-import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
@@ -23,13 +21,6 @@ import type { Match, MatchStatus, PoolMember } from '@/types'
 const LIVE_STATUSES: MatchStatus[] = ['IN_PLAY', 'PAUSED']
 const FINISHED_STATUSES: MatchStatus[] = ['FINISHED', 'POSTPONED', 'CANCELLED', 'SUSPENDED']
 
-function getMatchStakes(match: Match): PoolMember[] {
-  return POOL_MEMBERS.filter(
-    (m) =>
-      m.teams.includes(match.homeTeam.shortCode) ||
-      m.teams.includes(match.awayTeam.shortCode),
-  )
-}
 
 function sortMatchesWithinGroup(matches: Match[]): Match[] {
   return [...matches].sort((a, b) => {
@@ -68,13 +59,40 @@ function formatDateHeader(dateStr: string): string {
 
 // ─── ScheduleMatchCard ────────────────────────────────────────────────────────
 
+function InitialsBubble({ member }: { member: PoolMember }) {
+  return (
+    <Tooltip title={member.displayName}>
+      <Box
+        sx={{
+          width: 20,
+          height: 20,
+          borderRadius: '50%',
+          bgcolor: member.color,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '0.42rem',
+          fontWeight: 700,
+          color: '#fff',
+          letterSpacing: -0.3,
+          flexShrink: 0,
+          cursor: 'default',
+        }}
+      >
+        {member.avatarInitials}
+      </Box>
+    </Tooltip>
+  )
+}
+
 function ScheduleMatchCard({ match }: { match: Match }) {
   const navigate = useNavigate()
   const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED'
   const hasScore = match.homeScore !== null && match.awayScore !== null
   const homeCode = match.homeTeam.shortCode || match.homeTeam.name.slice(0, 3).toUpperCase()
   const awayCode = match.awayTeam.shortCode || match.awayTeam.name.slice(0, 3).toUpperCase()
-  const stakes = getMatchStakes(match)
+  const homeStakers = POOL_MEMBERS.filter((m) => m.teams.includes(match.homeTeam.shortCode))
+  const awayStakers = POOL_MEMBERS.filter((m) => m.teams.includes(match.awayTeam.shortCode))
 
   return (
     <Paper
@@ -121,43 +139,14 @@ function ScheduleMatchCard({ match }: { match: Match }) {
         </Box>
       )}
 
-      {/* Pool stakes */}
-      {stakes.length > 0 && (
-        <Box sx={{ display: 'flex', gap: 0.5, mt: 0.75 }}>
-          {stakes.map((m) => {
-            const involvedTeams = m.teams.filter(
-              (t) => match.homeTeam.shortCode === t || match.awayTeam.shortCode === t,
-            )
-            return (
-              <Tooltip key={m.id} title={`${m.displayName} · ${involvedTeams.join(', ')}`}>
-                <Avatar
-                  sx={{
-                    width: 22,
-                    height: 22,
-                    fontSize: '0.55rem',
-                    fontWeight: 700,
-                    bgcolor: m.color,
-                    cursor: 'default',
-                  }}
-                >
-                  {m.avatarInitials}
-                </Avatar>
-              </Tooltip>
-            )
-          })}
-          <Box sx={{ display: 'flex', gap: 0.4, ml: 0.5, alignItems: 'center' }}>
-            {stakes.flatMap((m) =>
-              m.teams
-                .filter((t) => match.homeTeam.shortCode === t || match.awayTeam.shortCode === t)
-                .map((t) => (
-                  <Chip
-                    key={`${m.id}-${t}`}
-                    label={teamFlag(t)}
-                    size="small"
-                    sx={{ height: 22, fontSize: '1rem', bgcolor: m.color, color: '#fff' }}
-                  />
-                )),
-            )}
+      {/* Member indicators: home stakers bottom-left, away stakers bottom-right */}
+      {(homeStakers.length > 0 || awayStakers.length > 0) && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.75 }}>
+          <Box sx={{ display: 'flex', gap: 0.4 }}>
+            {homeStakers.map((m) => <InitialsBubble key={m.id} member={m} />)}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.4 }}>
+            {awayStakers.map((m) => <InitialsBubble key={m.id} member={m} />)}
           </Box>
         </Box>
       )}

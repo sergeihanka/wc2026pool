@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Paper from '@mui/material/Paper'
-import Avatar from '@mui/material/Avatar'
-import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import Tooltip from '@mui/material/Tooltip'
 import Divider from '@mui/material/Divider'
@@ -24,19 +22,6 @@ type SortDir = 'asc' | 'desc'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const RANK_COLORS: Record<number, string> = {
-  1: '#FFD700',
-  2: '#C0C0C0',
-  3: '#CD7F32',
-}
-
-function getMatchStakes(match: Match): PoolMember[] {
-  return POOL_MEMBERS.filter(
-    (m) =>
-      m.teams.includes(match.homeTeam.shortCode) ||
-      m.teams.includes(match.awayTeam.shortCode),
-  )
-}
 
 function formatGD(gd: number): string {
   return gd > 0 ? `+${gd}` : String(gd)
@@ -83,42 +68,44 @@ function formatLastUpdated(d: Date | null): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function MemberStakes({ match }: { match: Match }) {
-  const stakes = getMatchStakes(match)
-  if (stakes.length === 0) return null
+function InitialsBubble({ member }: { member: PoolMember }) {
   return (
-    <Box sx={{ display: 'flex', gap: 0.5, mt: 0.75, flexWrap: 'wrap' }}>
-      {stakes.map((m) => {
-        const involvedTeams = m.teams.filter(
-          (t) => match.homeTeam.shortCode === t || match.awayTeam.shortCode === t,
-        )
-        return (
-          <Tooltip key={m.id} title={`${m.displayName} · ${involvedTeams.join(', ')}`}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-              <Avatar
-                sx={{
-                  width: 22,
-                  height: 22,
-                  fontSize: '0.55rem',
-                  fontWeight: 700,
-                  bgcolor: m.color,
-                  cursor: 'default',
-                }}
-              >
-                {m.avatarInitials}
-              </Avatar>
-              {involvedTeams.map((t) => (
-                <Chip
-                  key={t}
-                  label={teamFlag(t)}
-                  size="small"
-                  sx={{ height: 22, fontSize: '1rem', bgcolor: m.color, color: '#fff' }}
-                />
-              ))}
-            </Box>
-          </Tooltip>
-        )
-      })}
+    <Tooltip title={member.displayName}>
+      <Box
+        sx={{
+          width: 20,
+          height: 20,
+          borderRadius: '50%',
+          bgcolor: member.color,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '0.42rem',
+          fontWeight: 700,
+          color: '#fff',
+          letterSpacing: -0.3,
+          flexShrink: 0,
+          cursor: 'default',
+        }}
+      >
+        {member.avatarInitials}
+      </Box>
+    </Tooltip>
+  )
+}
+
+function MemberStakes({ match }: { match: Match }) {
+  const homeStakers = POOL_MEMBERS.filter((m) => m.teams.includes(match.homeTeam.shortCode))
+  const awayStakers = POOL_MEMBERS.filter((m) => m.teams.includes(match.awayTeam.shortCode))
+  if (homeStakers.length === 0 && awayStakers.length === 0) return null
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.75 }}>
+      <Box sx={{ display: 'flex', gap: 0.4 }}>
+        {homeStakers.map((m) => <InitialsBubble key={m.id} member={m} />)}
+      </Box>
+      <Box sx={{ display: 'flex', gap: 0.4 }}>
+        {awayStakers.map((m) => <InitialsBubble key={m.id} member={m} />)}
+      </Box>
     </Box>
   )
 }
@@ -220,9 +207,6 @@ function SortableHeader({
 // ─── StandingsRow ─────────────────────────────────────────────────────────────
 
 function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: Set<string> }) {
-  const rankColor = RANK_COLORS[row.rank]
-  const isTopThree = row.rank <= 3
-
   return (
     <Box
       sx={{
@@ -232,9 +216,7 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         py: 1,
         gap: 1,
         borderRadius: 1.5,
-        border: '1px solid',
-        borderColor: isTopThree ? `${rankColor}44` : 'rgba(255,255,255,0.07)',
-        background: isTopThree ? `${rankColor}09` : undefined,
+        border: '1px solid rgba(255,255,255,0.07)',
         mb: 0.75,
       }}
     >
@@ -245,7 +227,7 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
           minWidth: 22,
           textAlign: 'center',
           fontSize: '1rem',
-          color: isTopThree ? rankColor : 'text.secondary',
+          color: 'text.secondary',
         }}
       >
         {row.rank}
@@ -270,19 +252,16 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
 
       <Box sx={{ display: 'flex', gap: 0.4 }}>
         {row.member.teams.map((code) => (
-          <Chip
+          <Typography
             key={code}
-            label={teamFlag(code)}
-            size="small"
             sx={{
-              fontSize: '1rem',
-              height: 22,
-              bgcolor: playedTeams.has(code) ? row.member.color : 'transparent',
-              color: playedTeams.has(code) ? '#fff' : 'text.disabled',
-              border: '1px solid',
-              borderColor: playedTeams.has(code) ? row.member.color : 'rgba(255,255,255,0.2)',
+              fontSize: '1.1rem',
+              opacity: playedTeams.has(code) ? 1 : 0.35,
+              lineHeight: 1,
             }}
-          />
+          >
+            {teamFlag(code)}
+          </Typography>
         ))}
       </Box>
 
@@ -295,8 +274,8 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         <StatCell value={formatGD(row.goalDifference)} width={32} />
         <StatCell value={row.goalsFor} width={22} />
         <StatCell value={row.goalsAgainst} width={22} />
-        <StatCell value={row.yellowCards} width={22} color="#FFD700" />
-        <StatCell value={row.redCards} width={22} color="#f44336" />
+        <StatCell value={row.yellowCards} width={22} color="rgba(255,210,0,0.7)" />
+        <StatCell value={row.redCards} width={22} color="rgba(220,80,80,0.8)" />
       </Box>
 
       {/* Mobile: just W/D/L */}
@@ -313,7 +292,6 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
           minWidth: 28,
           textAlign: 'right',
           fontSize: '1.1rem',
-          color: isTopThree ? rankColor : 'text.primary',
         }}
       >
         {row.points}

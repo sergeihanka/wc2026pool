@@ -2,23 +2,12 @@ import { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Paper from '@mui/material/Paper'
-import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import { Flipper, Flipped } from 'react-flip-toolkit'
 import { poolService } from '@/services/PoolService'
 import { teamFlag } from '@/lib/flags'
 import type { LeaderboardRow, Match } from '@/types'
-
-const RANK_COLORS: Record<number, string> = {
-  1: '#FFD700',
-  2: '#C0C0C0',
-  3: '#CD7F32',
-}
-
-function getRankColor(rank: number): string {
-  return RANK_COLORS[rank] ?? 'text.secondary'
-}
 
 function formatGD(gd: number): string {
   if (gd > 0) return `+${gd}`
@@ -89,9 +78,6 @@ interface LeaderboardRowItemProps {
 }
 
 function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
-  const rankColor = getRankColor(row.rank)
-  const isTopThree = row.rank <= 3
-
   return (
     <Paper
       elevation={0}
@@ -102,10 +88,8 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
         py: 1.5,
         mb: 1,
         gap: { xs: 1, sm: 2 },
-        border: '1px solid',
-        borderColor: isTopThree ? `${rankColor}33` : 'rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 2,
-        background: isTopThree ? `${rankColor}0a` : undefined,
       }}
     >
       <Typography
@@ -115,7 +99,7 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
           fontFamily: 'Barlow Condensed',
           minWidth: 24,
           textAlign: 'center',
-          color: isTopThree ? rankColor : 'text.secondary',
+          color: 'text.secondary',
           fontSize: '1.1rem',
         }}
       >
@@ -137,21 +121,18 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
         {row.member.displayName}
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 0.5 }}>
+      <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
         {row.member.teams.map((code) => (
-          <Chip
+          <Typography
             key={code}
-            label={teamFlag(code)}
-            size="small"
             sx={{
-              fontSize: '1rem',
-              height: 22,
-              bgcolor: playedTeams.has(code) ? 'primary.main' : 'transparent',
-              color: playedTeams.has(code) ? '#fff' : 'text.disabled',
-              border: '1px solid',
-              borderColor: playedTeams.has(code) ? 'primary.main' : 'rgba(255,255,255,0.2)',
+              fontSize: '1.1rem',
+              opacity: playedTeams.has(code) ? 1 : 0.35,
+              lineHeight: 1,
             }}
-          />
+          >
+            {teamFlag(code)}
+          </Typography>
         ))}
       </Box>
 
@@ -185,7 +166,6 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
           minWidth: 28,
           textAlign: 'right',
           fontSize: '1.1rem',
-          color: isTopThree ? rankColor : 'text.primary',
         }}
       >
         {row.points}

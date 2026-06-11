@@ -138,12 +138,12 @@ function StatsGrid({
           </Typography>
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             {member.teams.map((t) => (
-              <Chip
+              <Typography
                 key={t}
-                label={teamFlag(t)}
-                size="small"
-                sx={{ fontSize: '1rem', height: 22, bgcolor: member.color, color: '#fff' }}
-              />
+                sx={{ fontSize: '1.2rem', lineHeight: 1 }}
+              >
+                {teamFlag(t)}
+              </Typography>
             ))}
           </Box>
         </Box>
@@ -409,11 +409,15 @@ function TeamSection({
 
 // ─── MyPoolPage ───────────────────────────────────────────────────────────────
 
+const POOL_VIEW_KEY = 'wcp_pool_view'
+
 export default function MyPoolPage() {
   const { currentMember } = useAuth()
-  const [viewMemberId, setViewMemberId] = useState<string>(
-    currentMember?.id ?? POOL_MEMBERS[0].id,
-  )
+  const [viewMemberId, setViewMemberId] = useState<string>(() => {
+    const saved = localStorage.getItem(POOL_VIEW_KEY)
+    if (saved && POOL_MEMBERS.some((m) => m.id === saved)) return saved
+    return currentMember?.id ?? POOL_MEMBERS[0].id
+  })
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -477,7 +481,10 @@ export default function MyPoolPage() {
                   </Avatar>
                 }
                 label={`${m.displayName.split(' ')[0]}${isMe ? ' (me)' : ''}`}
-                onClick={() => setViewMemberId(m.id)}
+                onClick={() => {
+                  localStorage.setItem(POOL_VIEW_KEY, m.id)
+                  setViewMemberId(m.id)
+                }}
                 size="small"
                 sx={{
                   fontWeight: isActive ? 700 : 400,
