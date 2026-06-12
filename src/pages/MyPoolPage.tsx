@@ -28,7 +28,6 @@ function formatMatchDate(utcDate: string): string {
   return new Date(utcDate).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-    timeZone: 'UTC',
   })
 }
 

@@ -127,7 +127,7 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
             key={code}
             sx={{
               fontSize: '1.1rem',
-              opacity: playedTeams.has(code) ? 1 : 0.35,
+              opacity: playedTeams.has(code) ? 1 : 0.6,
               lineHeight: 1,
             }}
           >

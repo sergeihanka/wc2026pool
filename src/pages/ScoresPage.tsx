@@ -36,10 +36,15 @@ function sortMatchesWithinGroup(matches: Match[]): Match[] {
   })
 }
 
+function localDateKey(utcDateStr: string): string {
+  const d = new Date(utcDateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function groupByDate(matches: Match[]): Map<string, Match[]> {
   const map = new Map<string, Match[]>()
   for (const match of matches) {
-    const key = match.utcDate.slice(0, 10)
+    const key = localDateKey(match.utcDate)
     const existing = map.get(key) ?? []
     existing.push(match)
     map.set(key, existing)
@@ -48,12 +53,11 @@ function groupByDate(matches: Match[]): Map<string, Match[]> {
 }
 
 function formatDateHeader(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00Z')
-  return date.toLocaleDateString(undefined, {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
   })
 }
 
@@ -209,7 +213,7 @@ export default function ScoresPage() {
     )
   }
 
-  const todayKey = new Date().toISOString().slice(0, 10)
+  const todayKey = localDateKey(new Date().toISOString())
   const grouped = groupByDate(matches)
   const sortedDates = Array.from(grouped.keys()).sort()
 

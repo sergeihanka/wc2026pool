@@ -48,11 +48,16 @@ function sortMatchesForHome(matches: Match[]): Match[] {
   })
 }
 
+function localDateKey(utcDateStr: string): string {
+  const d = new Date(utcDateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function getTodayAndLiveMatches(matches: Match[]): Match[] {
-  const todayUtc = new Date().toISOString().slice(0, 10)
+  const todayLocal = localDateKey(new Date().toISOString())
   return matches.filter((m) => {
     const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED'
-    const isToday = m.utcDate.slice(0, 10) === todayUtc
+    const isToday = localDateKey(m.utcDate) === todayLocal
     return isLive || isToday
   })
 }
@@ -256,7 +261,7 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
             key={code}
             sx={{
               fontSize: '1.1rem',
-              opacity: playedTeams.has(code) ? 1 : 0.35,
+              opacity: playedTeams.has(code) ? 1 : 0.6,
               lineHeight: 1,
             }}
           >

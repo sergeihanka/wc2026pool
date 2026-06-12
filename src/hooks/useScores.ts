@@ -74,6 +74,16 @@ export function useScores(): UseScoresResult {
     return () => clearInterval(id)
   }, [])
 
+  // During live matches, kick the server-side poller every 60s.
+  // Supplements the Netlify scheduler, which can miss calls on free tier.
+  const hasLive = matches.some((m) => m.status === 'IN_PLAY' || m.status === 'PAUSED')
+  useEffect(() => {
+    if (!hasLive) return
+    fetch('/.netlify/functions/poll-scores').catch(() => {})
+    const id = setInterval(() => fetch('/.netlify/functions/poll-scores').catch(() => {}), 60_000)
+    return () => clearInterval(id)
+  }, [hasLive])
+
   // When the cache is empty after the initial load, kick the server-side
   // poll-scores function once so it populates Supabase immediately, then retry
   // reading every 3 s until data arrives via Realtime or the fallback poll.
