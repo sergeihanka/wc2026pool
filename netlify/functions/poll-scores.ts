@@ -6,12 +6,12 @@
  * Set up cron-job.org (free) to hit this URL every 30–60 s for live updates.
  *
  * Required Netlify env vars:
- *   SUPABASE_URL              — same value as VITE_SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY — service role key (bypasses RLS for writes)
- *   VITE_FOOTBALL_API_KEY     — football-data.org API key
+ *   SUPABASE_URL or VITE_SUPABASE_URL  — Supabase project URL
+ *   SUPABASE_SERVICE_ROLE_KEY          — service role key (bypasses RLS for writes)
+ *   VITE_FOOTBALL_API_KEY              — football-data.org API key
  */
 
-import type { Config, Context } from '@netlify/functions'
+import type { Context } from '@netlify/functions'
 import { createClient } from '@supabase/supabase-js'
 
 interface ApiTeam { id: number | null; name: string | null; tla: string | null }
@@ -32,7 +32,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 export default async function handler(_req: Request, _context: Context): Promise<Response> {
-  const supabaseUrl = process.env['SUPABASE_URL']
+  const supabaseUrl = process.env['SUPABASE_URL'] ?? process.env['VITE_SUPABASE_URL']
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
   const apiKey     = process.env['VITE_FOOTBALL_API_KEY']
 
@@ -133,7 +133,3 @@ export default async function handler(_req: Request, _context: Context): Promise
   console.log(`[poll-scores] OK — ${matches.length} matches (${live} live) at ${now}`)
   return json({ ok: true, total: matches.length, live, updatedAt: now })
 }
-
-// Run every minute via Netlify's built-in scheduler (free tier, ~43k calls/month).
-// Also callable via HTTP GET /.netlify/functions/poll-scores for manual / cron-job.org use.
-export const config: Config = { schedule: '* * * * *' }

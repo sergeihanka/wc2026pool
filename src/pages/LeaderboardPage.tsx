@@ -6,7 +6,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import { Flipper, Flipped } from 'react-flip-toolkit'
 import { poolService } from '@/services/PoolService'
-import { teamFlag } from '@/lib/flags'
+import { TeamFlag } from '@/components/TeamFlag'
 import type { LeaderboardRow, Match } from '@/types'
 
 function formatGD(gd: number): string {
@@ -123,16 +123,9 @@ function LeaderboardRowItem({ row, playedTeams }: LeaderboardRowItemProps) {
 
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
         {row.member.teams.map((code) => (
-          <Typography
-            key={code}
-            sx={{
-              fontSize: '1.1rem',
-              opacity: playedTeams.has(code) ? 1 : 0.6,
-              lineHeight: 1,
-            }}
-          >
-            {teamFlag(code)}
-          </Typography>
+          <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.5 }}>
+            <TeamFlag tla={code} size={20} />
+          </Box>
         ))}
       </Box>
 

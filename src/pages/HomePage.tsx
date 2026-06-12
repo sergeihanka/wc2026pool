@@ -12,7 +12,7 @@ import { PollingService } from '@/services/PollingService'
 import { poolService } from '@/services/PoolService'
 import { useScores } from '@/hooks/useScores'
 import { POOL_MEMBERS } from '@/config/pool'
-import { teamFlag } from '@/lib/flags'
+import { TeamFlag } from '@/components/TeamFlag'
 import type { Match, PoolMember, LeaderboardRow } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -145,15 +145,15 @@ function LiveMatchCard({ match }: { match: Match }) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
-        <Typography variant="h5" sx={{ flex: 1, textAlign: 'right', fontWeight: 700, fontSize: '2rem' }}>
-          {teamFlag(homeCode)}
-        </Typography>
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <TeamFlag tla={homeCode} size={36} />
+        </Box>
         <Typography variant="h4" sx={{ fontWeight: 700, minWidth: 80, textAlign: 'center', letterSpacing: 2 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
-        <Typography variant="h5" sx={{ flex: 1, textAlign: 'left', fontWeight: 700, fontSize: '2rem' }}>
-          {teamFlag(awayCode)}
-        </Typography>
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+          <TeamFlag tla={awayCode} size={36} />
+        </Box>
       </Box>
 
       {isLive && match.minute != null && (
@@ -255,18 +255,11 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         {row.member.displayName}
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 0.4 }}>
+      <Box sx={{ display: 'flex', gap: 0.4, alignItems: 'center' }}>
         {row.member.teams.map((code) => (
-          <Typography
-            key={code}
-            sx={{
-              fontSize: '1.1rem',
-              opacity: playedTeams.has(code) ? 1 : 0.6,
-              lineHeight: 1,
-            }}
-          >
-            {teamFlag(code)}
-          </Typography>
+          <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.5 }}>
+            <TeamFlag tla={code} size={20} />
+          </Box>
         ))}
       </Box>
 

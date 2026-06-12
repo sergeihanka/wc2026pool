@@ -39,3 +39,10 @@ export function teamFlag(tla: string): string {
   const iso = FIFA_TO_ISO[tla.toUpperCase()]
   return iso ? isoToFlag(iso) : tla
 }
+
+/** Returns a flagcdn.com PNG URL for a FIFA TLA — works on all platforms including Windows. */
+export function teamFlagUrl(tla: string): string | null {
+  if (!tla || tla === 'TBD') return null
+  const iso = FIFA_TO_ISO[tla.toUpperCase()]
+  return iso ? `https://flagcdn.com/w40/${iso.toLowerCase()}.png` : null
+}

@@ -13,7 +13,7 @@ import { useScores } from '@/hooks/useScores'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import { POOL_MEMBERS } from '@/config/pool'
-import { teamFlag } from '@/lib/flags'
+import { TeamFlag } from '@/components/TeamFlag'
 import type { Match, MatchStatus, PoolMember } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -123,15 +123,15 @@ function ScheduleMatchCard({ match }: { match: Match }) {
 
       {/* Score row */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
-        <Typography variant="h6" sx={{ flex: 1, textAlign: 'right', fontWeight: 700, fontSize: '1.5rem' }}>
-          {teamFlag(homeCode)}
-        </Typography>
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <TeamFlag tla={homeCode} size={32} />
+        </Box>
         <Typography variant="h5" sx={{ fontWeight: 700, minWidth: 72, textAlign: 'center', letterSpacing: 2 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
-        <Typography variant="h6" sx={{ flex: 1, textAlign: 'left', fontWeight: 700, fontSize: '1.5rem' }}>
-          {teamFlag(awayCode)}
-        </Typography>
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+          <TeamFlag tla={awayCode} size={32} />
+        </Box>
       </Box>
 
       {/* Live minute */}
