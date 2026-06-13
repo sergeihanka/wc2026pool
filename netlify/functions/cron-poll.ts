@@ -64,7 +64,9 @@ export default async function handler(): Promise<void> {
 
   const now = new Date().toISOString()
 
-  const baseRows = matches.map((m) => ({
+  const baseRows = matches
+    .filter((m) => m.homeTeam.name && m.awayTeam.name)  // skip TBD knockout placeholders
+    .map((m) => ({
     id: m.id,
     home_team: m.homeTeam.name,
     away_team: m.awayTeam.name,
@@ -83,15 +85,19 @@ export default async function handler(): Promise<void> {
     updated_at: now,
   }))
 
-  const rowsWithBookings = baseRows.map((row, i) => ({
-    ...row,
-    bookings: (matches[i].bookings ?? []).map((b) => ({
-      minute: b.minute ?? 0,
-      team: b.team.id === matches[i].homeTeam.id ? 'home' : 'away',
-      card: b.card,
-      player: b.player?.name ?? null,
-    })),
-  }))
+  const matchById = new Map(matches.map((m) => [m.id, m]))
+  const rowsWithBookings = baseRows.map((row) => {
+    const m = matchById.get(row.id)!
+    return {
+      ...row,
+      bookings: (m.bookings ?? []).map((b) => ({
+        minute: b.minute ?? 0,
+        team: b.team.id === m.homeTeam.id ? 'home' : 'away',
+        card: b.card,
+        player: b.player?.name ?? null,
+      })),
+    }
+  })
 
   const { error: err1 } = await supabase
     .from('match_results_cache')
