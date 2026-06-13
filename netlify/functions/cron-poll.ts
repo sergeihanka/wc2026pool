@@ -22,14 +22,20 @@ interface ApiMatch {
 }
 
 export default async function handler(): Promise<void> {
-  const supabaseUrl = process.env['SUPABASE_URL']
+  const supabaseUrl = process.env['SUPABASE_URL'] ?? process.env['VITE_SUPABASE_URL']
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
-  const apiKey     = process.env['VITE_FOOTBALL_API_KEY']
+  const apiKey     = process.env['VITE_FOOTBALL_API_KEY'] ?? process.env['FOOTBALL_API_KEY']
 
   if (!supabaseUrl || !supabaseKey || !apiKey) {
-    console.error('[cron-poll] Missing env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VITE_FOOTBALL_API_KEY')
+    console.error('[cron-poll] Missing env vars. Have:', {
+      SUPABASE_URL: !!process.env['SUPABASE_URL'],
+      VITE_SUPABASE_URL: !!process.env['VITE_SUPABASE_URL'],
+      SUPABASE_SERVICE_ROLE_KEY: !!supabaseKey,
+      VITE_FOOTBALL_API_KEY: !!apiKey,
+    })
     return
   }
+  console.log('[cron-poll] Using Supabase URL:', supabaseUrl.slice(0, 40) + '...')
 
   const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -92,12 +98,12 @@ export default async function handler(): Promise<void> {
     .upsert(rowsWithBookings, { onConflict: 'id' })
 
   if (err1) {
-    console.warn('[cron-poll] Upsert with bookings failed, retrying without:', err1.message)
+    console.warn('[cron-poll] Upsert with bookings failed, retrying without:', err1.message, err1.details, err1.hint)
     const { error: err2 } = await supabase
       .from('match_results_cache')
       .upsert(baseRows, { onConflict: 'id' })
     if (err2) {
-      console.error('[cron-poll] Supabase upsert error:', err2.message)
+      console.error('[cron-poll] Supabase upsert error:', err2.message, err2.details, err2.hint)
       return
     }
   }
