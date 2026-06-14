@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton'
 import CloseIcon from '@mui/icons-material/Close'
 import { TeamFlag } from '@/components/TeamFlag'
 import { StatusChip } from '@/components/MatchCard'
+import { TEAM_NAMES } from '@/lib/flags'
 import { POOL_MEMBERS } from '@/config/pool'
 import type { Match } from '@/types'
 
@@ -110,9 +111,14 @@ export function TeamDrawer({ teamCode, matches, onClose }: Props) {
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5 }}>
           <TeamFlag tla={teamCode ?? ''} size={40} />
-          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '1.4rem', flex: 1 }}>
-            {teamCode}
-          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1.1 }}>
+              {teamCode ? (TEAM_NAMES[teamCode] ?? teamCode) : ''}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'Barlow Condensed' }}>
+              {teamCode}
+            </Typography>
+          </Box>
           {owner && (
             <Avatar sx={{ bgcolor: owner.color, width: 28, height: 28, fontSize: '0.55rem', fontWeight: 700 }}>
               {owner.avatarInitials}
