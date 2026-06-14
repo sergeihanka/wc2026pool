@@ -9,6 +9,7 @@ import Divider from '@mui/material/Divider'
 import CircularProgress from '@mui/material/CircularProgress'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import { TeamDrawer } from '@/components/TeamDrawer'
+import { MemberDrawer } from '@/components/MemberDrawer'
 import { PollingService } from '@/services/PollingService'
 import { poolService } from '@/services/PoolService'
 import { useScores } from '@/hooks/useScores'
@@ -74,10 +75,11 @@ function formatLastUpdated(d: Date | null): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function InitialsBubble({ member }: { member: PoolMember }) {
+function InitialsBubble({ member, onMemberClick }: { member: PoolMember; onMemberClick?: (m: PoolMember) => void }) {
   return (
     <Tooltip title={member.displayName}>
       <Box
+        onClick={(e) => { e.stopPropagation(); onMemberClick?.(member) }}
         sx={{
           width: 20,
           height: 20,
@@ -91,7 +93,7 @@ function InitialsBubble({ member }: { member: PoolMember }) {
           color: '#fff',
           letterSpacing: -0.3,
           flexShrink: 0,
-          cursor: 'default',
+          cursor: onMemberClick ? 'pointer' : 'default',
         }}
       >
         {member.avatarInitials}
@@ -100,23 +102,23 @@ function InitialsBubble({ member }: { member: PoolMember }) {
   )
 }
 
-function MemberStakes({ match }: { match: Match }) {
+function MemberStakes({ match, onMemberClick }: { match: Match; onMemberClick: (m: PoolMember) => void }) {
   const homeStakers = POOL_MEMBERS.filter((m) => m.teams.includes(match.homeTeam.shortCode))
   const awayStakers = POOL_MEMBERS.filter((m) => m.teams.includes(match.awayTeam.shortCode))
   if (homeStakers.length === 0 && awayStakers.length === 0) return null
   return (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.75 }}>
       <Box sx={{ display: 'flex', gap: 0.4 }}>
-        {homeStakers.map((m) => <InitialsBubble key={m.id} member={m} />)}
+        {homeStakers.map((m) => <InitialsBubble key={m.id} member={m} onMemberClick={onMemberClick} />)}
       </Box>
       <Box sx={{ display: 'flex', gap: 0.4 }}>
-        {awayStakers.map((m) => <InitialsBubble key={m.id} member={m} />)}
+        {awayStakers.map((m) => <InitialsBubble key={m.id} member={m} onMemberClick={onMemberClick} />)}
       </Box>
     </Box>
   )
 }
 
-function LiveMatchCard({ match, onTeamClick }: { match: Match; onTeamClick: (code: string) => void }) {
+function LiveMatchCard({ match, onTeamClick, onMemberClick }: { match: Match; onTeamClick: (code: string) => void; onMemberClick: (m: PoolMember) => void }) {
   const navigate = useNavigate()
   const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED'
   const hasScore = match.homeScore !== null && match.awayScore !== null
@@ -163,7 +165,7 @@ function LiveMatchCard({ match, onTeamClick }: { match: Match; onTeamClick: (cod
         </Box>
       </Box>
 
-      <MemberStakes match={match} />
+      <MemberStakes match={match} onMemberClick={onMemberClick} />
     </Paper>
   )
 }
@@ -210,9 +212,10 @@ function SortableHeader({
 
 // ─── StandingsRow ─────────────────────────────────────────────────────────────
 
-function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: Set<string> }) {
+function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow; playedTeams: Set<string>; onMemberClick: (m: PoolMember) => void }) {
   return (
     <Box
+      onClick={() => onMemberClick(row.member)}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -222,6 +225,9 @@ function StandingsRow({ row, playedTeams }: { row: LeaderboardRow; playedTeams: 
         borderRadius: 1.5,
         border: '1px solid rgba(255,255,255,0.07)',
         mb: 0.75,
+        cursor: 'pointer',
+        '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+        '&:active': { bgcolor: 'rgba(255,255,255,0.08)' },
       }}
     >
       <Typography
@@ -318,6 +324,7 @@ export default function HomePage() {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [, setTick] = useState(0)
   const [drawerTeam, setDrawerTeam] = useState<string | null>(null)
+  const [drawerMember, setDrawerMember] = useState<PoolMember | null>(null)
 
   useEffect(() => {
     polling.start()
@@ -381,7 +388,7 @@ export default function HomePage() {
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             {sortMatchesForHome(liveMatches).map((m) => (
-              <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} />
+              <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} onMemberClick={setDrawerMember} />
             ))}
           </Box>
           {todayMatches.filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED').length > 0 && (
@@ -391,7 +398,7 @@ export default function HomePage() {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
                 {sortMatchesForHome(todayMatches.filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED')).map((m) => (
-                  <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} />
+                  <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} onMemberClick={setDrawerMember} />
                 ))}
               </Box>
             </>
@@ -404,7 +411,7 @@ export default function HomePage() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             {sortMatchesForHome(todayMatches).map((m) => (
-              <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} />
+              <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} onMemberClick={setDrawerMember} />
             ))}
           </Box>
         </>
@@ -467,12 +474,13 @@ export default function HomePage() {
           </Box>
 
           {rows.map((row) => (
-            <StandingsRow key={row.member.id} row={row} playedTeams={playedTeams} />
+            <StandingsRow key={row.member.id} row={row} playedTeams={playedTeams} onMemberClick={setDrawerMember} />
           ))}
         </>
       )}
 
       <TeamDrawer teamCode={drawerTeam} matches={matches} onClose={() => setDrawerTeam(null)} />
+      <MemberDrawer member={drawerMember} matches={matches} onClose={() => setDrawerMember(null)} />
     </Box>
   )
 }
