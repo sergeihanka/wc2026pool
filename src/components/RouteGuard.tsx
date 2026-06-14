@@ -52,7 +52,7 @@ export default function RouteGuard() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <InstallBanner />
-      <Box sx={{ flex: 1, overflowY: 'auto', pb: '56px' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', pb: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
         <Outlet />
       </Box>
       <Paper
@@ -63,6 +63,7 @@ export default function RouteGuard() {
           left: 0,
           right: 0,
           zIndex: 1100,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         <BottomNavigation
