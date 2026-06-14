@@ -46,7 +46,7 @@ export const POOL_MEMBERS: PoolMember[] = [
   {
     id: 'evan_berg',
     displayName: 'Evan Berg',
-    teams: ['BEL'],
+    teams: ['BEL', 'COL'],
     avatarInitials: 'EB',
     color: '#E65100',
   },
