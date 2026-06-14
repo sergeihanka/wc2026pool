@@ -63,6 +63,7 @@ export default function RouteGuard() {
           left: 0,
           right: 0,
           zIndex: 1100,
+          bgcolor: '#0a1628',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
