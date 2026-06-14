@@ -71,6 +71,7 @@ export default function RouteGuard() {
           value={navValue}
           onChange={(_, newValue: string) => navigate(newValue)}
           showLabels
+          sx={{ bgcolor: '#0a1628' }}
         >
           {NAV_ITEMS.map((item) => (
             <BottomNavigationAction

@@ -16,6 +16,7 @@
     "@mui/icons-material": "^9.0.1",
     "@mui/material": "^9.0.1",
     "@supabase/supabase-js": "^2.107.0",
+    "flag-icons": "^7.5.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-flip-toolkit": "^7.2.4",
