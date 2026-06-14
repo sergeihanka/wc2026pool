@@ -3,12 +3,14 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import BottomNavigation from '@mui/material/BottomNavigation'
 import BottomNavigationAction from '@mui/material/BottomNavigationAction'
-import Paper from '@mui/material/Paper'
 import HomeIcon from '@mui/icons-material/Home'
 import GroupsIcon from '@mui/icons-material/Groups'
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import { useAuth } from '@/hooks/useAuth'
 import InstallBanner from '@/components/InstallBanner'
+
+const NAV_HEIGHT = 56
+const NAV_BG = '#0a1628'
 
 const NAV_ITEMS = [
   { label: 'Home', value: '/', icon: <HomeIcon /> },
@@ -29,15 +31,7 @@ export default function RouteGuard() {
 
   if (isLoading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          bgcolor: 'background.default',
-        }}
-      >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', bgcolor: 'background.default' }}>
         <CircularProgress color="primary" />
       </Box>
     )
@@ -50,28 +44,38 @@ export default function RouteGuard() {
   const navValue = resolveNavValue(location.pathname)
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100dvh',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top safe-area spacer */}
+      <Box sx={{ flexShrink: 0, height: 'env(safe-area-inset-top, 0px)', bgcolor: 'background.default' }} />
+
       <InstallBanner />
-      <Box sx={{ flex: 1, overflowY: 'auto', pb: 'calc(56px + env(safe-area-inset-bottom, 0px))' }}>
+
+      {/* Scrollable page content */}
+      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         <Outlet />
       </Box>
-      <Paper
-        elevation={8}
+
+      {/* Bottom nav — sits above the home-indicator safe area */}
+      <Box
         sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1100,
-          bgcolor: '#0a1628',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          flexShrink: 0,
+          bgcolor: NAV_BG,
+          // Extend background colour into the home-indicator zone
+          pb: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         <BottomNavigation
           value={navValue}
           onChange={(_, newValue: string) => navigate(newValue)}
           showLabels
-          sx={{ bgcolor: '#0a1628' }}
+          sx={{ height: NAV_HEIGHT, bgcolor: NAV_BG }}
         >
           {NAV_ITEMS.map((item) => (
             <BottomNavigationAction
@@ -82,7 +86,7 @@ export default function RouteGuard() {
             />
           ))}
         </BottomNavigation>
-      </Paper>
+      </Box>
     </Box>
   )
 }
