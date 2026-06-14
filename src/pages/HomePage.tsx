@@ -8,6 +8,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Divider from '@mui/material/Divider'
 import CircularProgress from '@mui/material/CircularProgress'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
+import { TeamDrawer } from '@/components/TeamDrawer'
 import { PollingService } from '@/services/PollingService'
 import { poolService } from '@/services/PoolService'
 import { useScores } from '@/hooks/useScores'
@@ -115,7 +116,7 @@ function MemberStakes({ match }: { match: Match }) {
   )
 }
 
-function LiveMatchCard({ match }: { match: Match }) {
+function LiveMatchCard({ match, onTeamClick }: { match: Match; onTeamClick: (code: string) => void }) {
   const navigate = useNavigate()
   const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED'
   const hasScore = match.homeScore !== null && match.awayScore !== null
@@ -145,24 +146,22 @@ function LiveMatchCard({ match }: { match: Match }) {
       </Box>
 
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <Box
+          sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 0.5, borderRadius: 1, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          onClick={(e) => { e.stopPropagation(); onTeamClick(homeCode) }}
+        >
           <TeamFlag tla={homeCode} size={36} />
         </Box>
         <Typography variant="h4" sx={{ fontWeight: 700, minWidth: 80, textAlign: 'center', letterSpacing: 2 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <Box
+          sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', p: 0.5, borderRadius: 1, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          onClick={(e) => { e.stopPropagation(); onTeamClick(awayCode) }}
+        >
           <TeamFlag tla={awayCode} size={36} />
         </Box>
       </Box>
-
-      {isLive && match.minute != null && (
-        <Box sx={{ textAlign: 'center', mb: 0.5 }}>
-          <Typography variant="caption" color="error.main" sx={{ fontWeight: 700 }}>
-            {match.minute}&apos;
-          </Typography>
-        </Box>
-      )}
 
       <MemberStakes match={match} />
     </Paper>
@@ -318,6 +317,7 @@ export default function HomePage() {
   const [sortKey, setSortKey] = useState<SortKey>('points')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [, setTick] = useState(0)
+  const [drawerTeam, setDrawerTeam] = useState<string | null>(null)
 
   useEffect(() => {
     polling.start()
@@ -381,7 +381,7 @@ export default function HomePage() {
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             {sortMatchesForHome(liveMatches).map((m) => (
-              <LiveMatchCard key={m.id} match={m} />
+              <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} />
             ))}
           </Box>
           {todayMatches.filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED').length > 0 && (
@@ -391,7 +391,7 @@ export default function HomePage() {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
                 {sortMatchesForHome(todayMatches.filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED')).map((m) => (
-                  <LiveMatchCard key={m.id} match={m} />
+                  <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} />
                 ))}
               </Box>
             </>
@@ -404,7 +404,7 @@ export default function HomePage() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             {sortMatchesForHome(todayMatches).map((m) => (
-              <LiveMatchCard key={m.id} match={m} />
+              <LiveMatchCard key={m.id} match={m} onTeamClick={setDrawerTeam} />
             ))}
           </Box>
         </>
@@ -471,6 +471,8 @@ export default function HomePage() {
           ))}
         </>
       )}
+
+      <TeamDrawer teamCode={drawerTeam} matches={matches} onClose={() => setDrawerTeam(null)} />
     </Box>
   )
 }

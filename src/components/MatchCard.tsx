@@ -25,9 +25,10 @@ export function StatusChip({ match }: { match: Match }) {
   const { status } = match
 
   if (status === 'IN_PLAY') {
+    const label = match.minute != null ? `${match.minute}'` : 'LIVE'
     return (
       <Chip
-        label="LIVE"
+        label={label}
         size="small"
         color="error"
         sx={{ animation: 'livePulse 1.5s ease-in-out infinite', fontWeight: 700 }}

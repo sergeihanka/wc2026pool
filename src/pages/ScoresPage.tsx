@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -12,6 +12,7 @@ import { PollingService } from '@/services/PollingService'
 import { useScores } from '@/hooks/useScores'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
+import { TeamDrawer } from '@/components/TeamDrawer'
 import { POOL_MEMBERS } from '@/config/pool'
 import { TeamFlag } from '@/components/TeamFlag'
 import type { Match, MatchStatus, PoolMember } from '@/types'
@@ -89,7 +90,7 @@ function InitialsBubble({ member }: { member: PoolMember }) {
   )
 }
 
-function ScheduleMatchCard({ match }: { match: Match }) {
+function ScheduleMatchCard({ match, onTeamClick }: { match: Match; onTeamClick: (code: string) => void }) {
   const navigate = useNavigate()
   const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED'
   const hasScore = match.homeScore !== null && match.awayScore !== null
@@ -121,27 +122,24 @@ function ScheduleMatchCard({ match }: { match: Match }) {
         <StatusChip match={match} />
       </Box>
 
-      {/* Score row */}
+      {/* Score row — tap flag to open team quick-view */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <Box
+          sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 0.5, borderRadius: 1, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          onClick={(e) => { e.stopPropagation(); onTeamClick(homeCode) }}
+        >
           <TeamFlag tla={homeCode} size={32} />
         </Box>
         <Typography variant="h5" sx={{ fontWeight: 700, minWidth: 72, textAlign: 'center', letterSpacing: 2 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <Box
+          sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', p: 0.5, borderRadius: 1, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          onClick={(e) => { e.stopPropagation(); onTeamClick(awayCode) }}
+        >
           <TeamFlag tla={awayCode} size={32} />
         </Box>
       </Box>
-
-      {/* Live minute */}
-      {isLive && match.minute != null && (
-        <Box sx={{ textAlign: 'center', mb: 0.5 }}>
-          <Typography variant="caption" color="error.main" sx={{ fontWeight: 700 }}>
-            {match.minute}&apos;
-          </Typography>
-        </Box>
-      )}
 
       {/* Member indicators: home stakers bottom-left, away stakers bottom-right */}
       {(homeStakers.length > 0 || awayStakers.length > 0) && (
@@ -165,6 +163,7 @@ export default function ScoresPage() {
   const { isOnline } = useNetworkStatus()
   const polling = PollingService.getInstance()
   const todayRef = useRef<HTMLDivElement>(null)
+  const [drawerTeam, setDrawerTeam] = useState<string | null>(null)
 
   useEffect(() => {
     polling.start()
@@ -250,12 +249,14 @@ export default function ScoresPage() {
             </Box>
             <Box sx={{ px: 2, display: 'flex', flexDirection: 'column', gap: 1.5, py: 1.5 }}>
               {dayMatches.map((match) => (
-                <ScheduleMatchCard key={match.id} match={match} />
+                <ScheduleMatchCard key={match.id} match={match} onTeamClick={setDrawerTeam} />
               ))}
             </Box>
           </Box>
         )
       })}
+
+      <TeamDrawer teamCode={drawerTeam} matches={matches} onClose={() => setDrawerTeam(null)} />
     </Box>
   )
 }
