@@ -170,22 +170,16 @@ function LiveMatchCard({ match, onTeamClick, onMemberClick }: { match: Match; on
   )
 }
 
-// ─── SortableHeader ───────────────────────────────────────────────────────────
+// ─── Standings table ──────────────────────────────────────────────────────────
 
-const COL_W = 36 // px width for each stat column
+const STICKY_BG = '#0d1f3c' // match app background so sticky cells don't bleed
+const COL_W = 38
 
 function Th({
-  label,
-  sortKey,
-  current,
-  dir,
-  onSort,
+  label, sortKey, current, dir, onSort, sticky,
 }: {
-  label: string
-  sortKey: SortKey
-  current: SortKey
-  dir: SortDir
-  onSort: (k: SortKey) => void
+  label: string; sortKey: SortKey; current: SortKey; dir: SortDir
+  onSort: (k: SortKey) => void; sticky?: 'right'
 }) {
   const isActive = current === sortKey
   return (
@@ -193,18 +187,20 @@ function Th({
       component="th"
       onClick={() => onSort(sortKey)}
       sx={{
-        width: COL_W,
-        minWidth: COL_W,
+        width: COL_W, minWidth: COL_W,
+        position: sticky ? 'sticky' : undefined,
+        right: sticky === 'right' ? 0 : undefined,
+        zIndex: sticky ? 2 : undefined,
+        bgcolor: STICKY_BG,
         textAlign: 'center',
-        pb: 0.75,
-        cursor: 'pointer',
-        userSelect: 'none',
+        pb: 0.75, pt: 0.25,
+        cursor: 'pointer', userSelect: 'none',
         color: isActive ? 'primary.main' : 'text.secondary',
         fontWeight: isActive ? 700 : 400,
         fontSize: '0.68rem',
-        fontFamily: 'inherit',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: sticky === 'right' ? '-3px 0 6px rgba(0,0,0,0.4)' : undefined,
         whiteSpace: 'nowrap',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
         '&:hover': { color: 'text.primary' },
       }}
     >
@@ -213,18 +209,23 @@ function Th({
   )
 }
 
-function Td({ value, color, bold }: { value: string | number; color?: string; bold?: boolean }) {
+function Td({ value, color, bold, sticky }: { value: string | number; color?: string; bold?: boolean; sticky?: 'right' }) {
   return (
     <Box
       component="td"
       sx={{
-        width: COL_W,
+        width: COL_W, minWidth: COL_W,
+        position: sticky ? 'sticky' : undefined,
+        right: sticky === 'right' ? 0 : undefined,
+        zIndex: sticky ? 1 : undefined,
+        bgcolor: STICKY_BG,
         textAlign: 'center',
         fontSize: bold ? '1rem' : '0.78rem',
         fontWeight: bold ? 700 : 400,
         fontFamily: bold ? 'Barlow Condensed' : 'inherit',
         color: color ?? 'text.secondary',
-        py: 0.9,
+        py: 0.85,
+        boxShadow: sticky === 'right' ? '-3px 0 6px rgba(0,0,0,0.4)' : undefined,
       }}
     >
       {value}
@@ -234,6 +235,8 @@ function Td({ value, color, bold }: { value: string | number; color?: string; bo
 
 // ─── StandingsRow ─────────────────────────────────────────────────────────────
 
+const LEFT_W = 158 // px — rank(18) + dot(9) + name(~80) + flags(2×21) + gaps
+
 function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow; playedTeams: Set<string>; onMemberClick: (m: PoolMember) => void }) {
   return (
     <Box
@@ -241,44 +244,42 @@ function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow
       onClick={() => onMemberClick(row.member)}
       sx={{
         cursor: 'pointer',
-        '&:hover td, &:hover .sticky-cell': { bgcolor: 'rgba(255,255,255,0.04)' },
-        '&:active td, &:active .sticky-cell': { bgcolor: 'rgba(255,255,255,0.08)' },
+        '&:hover .scell': { bgcolor: 'rgba(255,255,255,0.05) !important' },
+        '&:active .scell': { bgcolor: 'rgba(255,255,255,0.1) !important' },
       }}
     >
-      {/* Sticky left cell: rank + dot + name + flags */}
+      {/* LEFT sticky: rank · dot · name · flags */}
       <Box
         component="td"
-        className="sticky-cell"
+        className="scell"
         sx={{
-          position: 'sticky',
-          left: 0,
-          zIndex: 1,
-          bgcolor: 'background.paper',
-          py: 0.9,
-          pr: 1.5,
+          position: 'sticky', left: 0, zIndex: 1,
+          bgcolor: STICKY_BG,
+          width: LEFT_W, minWidth: LEFT_W, maxWidth: LEFT_W,
+          py: 0.85, pr: 1,
           borderBottom: '1px solid rgba(255,255,255,0.05)',
-          minWidth: 160,
-          maxWidth: 180,
+          boxShadow: '3px 0 6px rgba(0,0,0,0.35)',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '0.9rem', color: 'text.secondary', minWidth: 16, textAlign: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, overflow: 'hidden' }}>
+          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '0.85rem', color: 'text.secondary', width: 16, textAlign: 'center', flexShrink: 0 }}>
             {row.rank}
           </Typography>
           <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: row.member.color, flexShrink: 0 }} />
-          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 600, fontSize: '0.88rem', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 600, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
             {row.member.displayName.split(' ')[0]}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 0.3 }}>
+          <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
             {row.member.teams.map((code) => (
-              <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.4 }}>
-                <TeamFlag tla={code} size={16} />
+              <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.35 }}>
+                <TeamFlag tla={code} size={15} />
               </Box>
             ))}
           </Box>
         </Box>
       </Box>
 
+      {/* Scrollable stat columns */}
       <Td value={row.played} />
       <Td value={row.won} />
       <Td value={row.drawn} />
@@ -288,7 +289,9 @@ function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow
       <Td value={row.goalsAgainst} />
       <Td value={row.yellowCards} color="rgba(255,210,0,0.85)" />
       <Td value={row.redCards} color="rgba(220,80,80,0.9)" />
-      <Td value={row.points} bold color="text.primary" />
+
+      {/* RIGHT sticky: points */}
+      <Td value={row.points} bold color="text.primary" sticky="right" />
     </Box>
   )
 }
@@ -438,36 +441,33 @@ export default function HomePage() {
           >
             <Box component="thead">
               <Box component="tr">
-                {/* Sticky header cell */}
+                {/* LEFT sticky header */}
                 <Box
                   component="th"
                   sx={{
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 2,
-                    bgcolor: 'background.paper',
-                    pb: 0.75,
+                    position: 'sticky', left: 0, zIndex: 3,
+                    bgcolor: STICKY_BG,
+                    width: LEFT_W, minWidth: LEFT_W,
+                    pb: 0.75, pt: 0.25, pr: 1,
                     textAlign: 'left',
-                    fontSize: '0.68rem',
-                    color: 'text.secondary',
-                    fontWeight: 400,
-                    borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    minWidth: 160,
-                    pr: 1.5,
+                    fontSize: '0.68rem', color: 'text.secondary', fontWeight: 400,
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '3px 0 6px rgba(0,0,0,0.35)',
                   }}
                 >
                   Player
                 </Box>
-                <Th label="P"   sortKey="played"       {...headerProps} />
-                <Th label="W"   sortKey="won"           {...headerProps} />
-                <Th label="D"   sortKey="drawn"         {...headerProps} />
-                <Th label="L"   sortKey="lost"          {...headerProps} />
+                <Th label="P"   sortKey="played"        {...headerProps} />
+                <Th label="W"   sortKey="won"            {...headerProps} />
+                <Th label="D"   sortKey="drawn"          {...headerProps} />
+                <Th label="L"   sortKey="lost"           {...headerProps} />
                 <Th label="GD"  sortKey="goalDifference" {...headerProps} />
-                <Th label="GF"  sortKey="goalsFor"      {...headerProps} />
-                <Th label="GA"  sortKey="goalsAgainst"  {...headerProps} />
-                <Th label="🟨"  sortKey="yellowCards"   {...headerProps} />
-                <Th label="🟥"  sortKey="redCards"      {...headerProps} />
-                <Th label="Pts" sortKey="points"        {...headerProps} />
+                <Th label="GF"  sortKey="goalsFor"       {...headerProps} />
+                <Th label="GA"  sortKey="goalsAgainst"   {...headerProps} />
+                <Th label="🟨"  sortKey="yellowCards"    {...headerProps} />
+                <Th label="🟥"  sortKey="redCards"       {...headerProps} />
+                {/* RIGHT sticky header */}
+                <Th label="Pts" sortKey="points"         {...headerProps} sticky="right" />
               </Box>
             </Box>
             <Box component="tbody">
