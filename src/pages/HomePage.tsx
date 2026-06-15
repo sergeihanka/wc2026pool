@@ -240,9 +240,9 @@ function StandingsRow({ row, onMemberClick }: { row: LeaderboardRow; onMemberCli
       onClick={() => onMemberClick(row.member)}
       sx={{
         cursor: 'pointer',
-        '&:hover .lcell': { bgcolor: 'rgba(255,255,255,0.04) !important' },
-        '&:active .lcell': { bgcolor: 'rgba(255,255,255,0.08) !important' },
-        '&:hover td': { bgcolor: 'rgba(255,255,255,0.02)' },
+        '&:hover .lcell': { bgcolor: '#172a4a !important' },
+        '&:active .lcell': { bgcolor: '#1d3357 !important' },
+        '&:hover td': { bgcolor: 'rgba(255,255,255,0.025)' },
       }}
     >
       {/* LEFT sticky: rank · flags · name + record */}

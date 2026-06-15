@@ -9,7 +9,6 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import { useAuth } from '@/hooks/useAuth'
 import InstallBanner from '@/components/InstallBanner'
 
-const NAV_HEIGHT = 56
 const NAV_BG = '#0a1628'
 
 const NAV_ITEMS = [
@@ -44,49 +43,40 @@ export default function RouteGuard() {
   const navValue = resolveNavValue(location.pathname)
 
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Top safe-area spacer */}
-      <Box sx={{ flexShrink: 0, height: 'env(safe-area-inset-top, 0px)', bgcolor: 'background.default' }} />
+    <Box sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Status bar safe area */}
+      <Box sx={{ flexShrink: 0, height: 'env(safe-area-inset-top, 0px)', bgcolor: NAV_BG }} />
 
       <InstallBanner />
 
-      {/* Scrollable page content */}
-      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
+      {/* Page content */}
+      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         <Outlet />
       </Box>
 
-      {/* Bottom nav — sits above the home-indicator safe area */}
-      <Box
+      {/* Bottom nav — paddingBottom fills the home-indicator zone with the same color */}
+      <BottomNavigation
+        value={navValue}
+        onChange={(_, v: string) => navigate(v)}
+        showLabels
         sx={{
           flexShrink: 0,
           bgcolor: NAV_BG,
-          pb: 'env(safe-area-inset-bottom, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          height: 'auto',
+          // Override MUI's fixed height so padding is additive
+          '& .MuiBottomNavigation-root': { height: 56 },
         }}
       >
-        <BottomNavigation
-          value={navValue}
-          onChange={(_, newValue: string) => navigate(newValue)}
-          showLabels
-          sx={{ height: NAV_HEIGHT, bgcolor: NAV_BG }}
-        >
-          {NAV_ITEMS.map((item) => (
-            <BottomNavigationAction
-              key={item.value}
-              label={item.label}
-              value={item.value}
-              icon={item.icon}
-            />
-          ))}
-        </BottomNavigation>
-      </Box>
+        {NAV_ITEMS.map((item) => (
+          <BottomNavigationAction
+            key={item.value}
+            label={item.label}
+            value={item.value}
+            icon={item.icon}
+          />
+        ))}
+      </BottomNavigation>
     </Box>
   )
 }
