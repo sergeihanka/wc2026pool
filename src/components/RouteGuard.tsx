@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import InstallBanner from '@/components/InstallBanner'
 
 const NAV_BG = '#0a1628'
+const NAV_H = 56
 
 const NAV_ITEMS = [
   { label: 'Home', value: '/', icon: <HomeIcon /> },
@@ -45,38 +46,49 @@ export default function RouteGuard() {
   return (
     <Box sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Status bar safe area */}
-      <Box sx={{ flexShrink: 0, height: 'env(safe-area-inset-top, 0px)', bgcolor: NAV_BG }} />
+      <Box sx={{ flexShrink: 0, height: 'env(safe-area-inset-top, 0px)', bgcolor: 'background.default' }} />
 
       <InstallBanner />
 
-      {/* Page content */}
+      {/* Scrollable content */}
       <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         <Outlet />
       </Box>
 
-      {/* Bottom nav — paddingBottom fills the home-indicator zone with the same color */}
-      <BottomNavigation
-        value={navValue}
-        onChange={(_, v: string) => navigate(v)}
-        showLabels
-        sx={{
+      {/*
+        Nav wrapper: plain div so no MUI elevation/bg-image interference.
+        backgroundColor covers the full area including the home-indicator zone.
+        The BottomNavigation sits at the top of this wrapper; the safe-area
+        padding below it is filled by the same backgroundColor.
+      */}
+      <div
+        style={{
           flexShrink: 0,
-          bgcolor: NAV_BG,
+          backgroundColor: NAV_BG,
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          height: 'auto',
-          // Override MUI's fixed height so padding is additive
-          '& .MuiBottomNavigation-root': { height: 56 },
+          borderTop: '1px solid rgba(255,255,255,0.10)',
         }}
       >
-        {NAV_ITEMS.map((item) => (
-          <BottomNavigationAction
-            key={item.value}
-            label={item.label}
-            value={item.value}
-            icon={item.icon}
-          />
-        ))}
-      </BottomNavigation>
+        <BottomNavigation
+          value={navValue}
+          onChange={(_, v: string) => navigate(v)}
+          showLabels
+          style={{
+            height: NAV_H,
+            backgroundColor: NAV_BG,
+            backgroundImage: 'none', // kill MUI elevation white overlay
+          }}
+        >
+          {NAV_ITEMS.map((item) => (
+            <BottomNavigationAction
+              key={item.value}
+              label={item.label}
+              value={item.value}
+              icon={item.icon}
+            />
+          ))}
+        </BottomNavigation>
+      </div>
     </Box>
   )
 }
