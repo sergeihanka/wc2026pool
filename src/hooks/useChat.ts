@@ -33,8 +33,9 @@ export function useChat(currentMemberId: string | null) {
 
   // Realtime subscription
   useEffect(() => {
+    const channelName = `chat-${Math.random().toString(36).slice(2)}`
     const channel = supabase
-      .channel('chat')
+      .channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
         setMessages((prev) => [...prev, payload.new as ChatMessage])
       })
