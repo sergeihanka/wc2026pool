@@ -46,9 +46,10 @@ export default function RouteGuard() {
   return (
     <Box
       sx={{
+        position: 'fixed',
+        inset: 0,
         display: 'flex',
         flexDirection: 'column',
-        height: '100dvh',
         overflow: 'hidden',
       }}
     >
@@ -58,7 +59,7 @@ export default function RouteGuard() {
       <InstallBanner />
 
       {/* Scrollable page content */}
-      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
         <Outlet />
       </Box>
 
@@ -67,7 +68,6 @@ export default function RouteGuard() {
         sx={{
           flexShrink: 0,
           bgcolor: NAV_BG,
-          // Extend background colour into the home-indicator zone
           pb: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
