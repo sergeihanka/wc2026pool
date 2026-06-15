@@ -268,15 +268,6 @@ function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow
             {row.rank}
           </Typography>
 
-          {/* Flags stacked */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexShrink: 0 }}>
-            {row.member.teams.map((code) => (
-              <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.3 }}>
-                <TeamFlag tla={code} size={14} />
-              </Box>
-            ))}
-          </Box>
-
           {/* Name + record */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{
