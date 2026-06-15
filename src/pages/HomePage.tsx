@@ -132,36 +132,41 @@ function LiveMatchCard({ match, onTeamClick, onMemberClick }: { match: Match; on
       sx={{
         border: '1px solid',
         borderColor: isLive ? 'error.main' : 'rgba(255,255,255,0.1)',
-        borderRadius: 2,
-        p: 2,
+        borderRadius: 1.5,
+        px: 1.5, py: 1,
         cursor: 'pointer',
         background: isLive ? 'rgba(211,47,47,0.06)' : undefined,
         '&:hover': { borderColor: 'primary.main' },
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          {formatStageLabel(match.stage)}
-          {match.group ? ` · ${match.group}` : ''}
-        </Typography>
-        <StatusChip match={match} />
-      </Box>
-
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, my: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Home flag */}
         <Box
-          sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 0.5, borderRadius: 1, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          sx={{ display: 'flex', alignItems: 'center', p: 0.25, borderRadius: 0.5, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
           onClick={(e) => { e.stopPropagation(); onTeamClick(homeCode) }}
         >
-          <TeamFlag tla={homeCode} size={36} />
+          <TeamFlag tla={homeCode} size={26} />
         </Box>
-        <Typography variant="h4" sx={{ fontWeight: 700, minWidth: 80, textAlign: 'center', letterSpacing: 2 }}>
+
+        {/* Score / time */}
+        <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '1.1rem', minWidth: 56, textAlign: 'center', letterSpacing: 1 }}>
           {hasScore ? `${match.homeScore} – ${match.awayScore}` : '–'}
         </Typography>
+
+        {/* Away flag */}
         <Box
-          sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', p: 0.5, borderRadius: 1, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
+          sx={{ display: 'flex', alignItems: 'center', p: 0.25, borderRadius: 0.5, '&:active': { bgcolor: 'rgba(255,255,255,0.08)' } }}
           onClick={(e) => { e.stopPropagation(); onTeamClick(awayCode) }}
         >
-          <TeamFlag tla={awayCode} size={36} />
+          <TeamFlag tla={awayCode} size={26} />
+        </Box>
+
+        {/* Stage + status pushed to right */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.25 }}>
+          <StatusChip match={match} />
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>
+            {formatStageLabel(match.stage)}{match.group ? ` · ${match.group}` : ''}
+          </Typography>
         </Box>
       </Box>
 
