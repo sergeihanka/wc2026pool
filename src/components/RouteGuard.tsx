@@ -65,7 +65,6 @@ export default function RouteGuard() {
         style={{
           flexShrink: 0,
           backgroundColor: NAV_BG,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           borderTop: '1px solid rgba(255,255,255,0.10)',
         }}
       >
