@@ -5,6 +5,7 @@ import HomePage from '@/pages/HomePage'
 import ScoresPage from '@/pages/ScoresPage'
 import MatchDetailPage from '@/pages/MatchDetailPage'
 import MyPoolPage from '@/pages/MyPoolPage'
+import ChatPage from '@/pages/ChatPage'
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: '/scores/:matchId', element: <MatchDetailPage /> },
       { path: '/matches/:matchId', element: <MatchDetailPage /> },
       { path: '/my-pool', element: <MyPoolPage /> },
+      { path: '/chat', element: <ChatPage /> },
       { path: '/leaderboard', element: <Navigate to="/" replace /> },
     ],
   },
