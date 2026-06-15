@@ -230,7 +230,7 @@ function Td({ value, color, bold, first }: { value: string | number; color?: str
 
 // ─── StandingsRow ─────────────────────────────────────────────────────────────
 
-function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow; playedTeams: Set<string>; onMemberClick: (m: PoolMember) => void }) {
+function StandingsRow({ row, onMemberClick }: { row: LeaderboardRow; onMemberClick: (m: PoolMember) => void }) {
   const RANK_COLORS: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
   const rankColor = RANK_COLORS[row.rank]
 
@@ -471,7 +471,7 @@ export default function HomePage() {
               </Box>
               <Box component="tbody">
                 {rows.map((row) => (
-                  <StandingsRow key={row.member.id} row={row} playedTeams={playedTeams} onMemberClick={setDrawerMember} />
+                  <StandingsRow key={row.member.id} row={row} onMemberClick={setDrawerMember} />
                 ))}
               </Box>
             </Box>
