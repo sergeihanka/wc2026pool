@@ -172,7 +172,7 @@ function LiveMatchCard({ match, onTeamClick, onMemberClick }: { match: Match; on
 
 // ─── Standings table ──────────────────────────────────────────────────────────
 
-const STICKY_BG = '#0d1f3c' // match app background so sticky cells don't bleed
+const STICKY_BG = '#0f2040' // matches theme background.paper
 const COL_W = 38
 
 function Th({
