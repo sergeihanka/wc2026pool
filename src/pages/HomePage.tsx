@@ -173,13 +173,14 @@ function LiveMatchCard({ match, onTeamClick, onMemberClick }: { match: Match; on
 // ─── Standings table ──────────────────────────────────────────────────────────
 
 const STICKY_BG = '#0f2040' // matches theme background.paper
-const COL_W = 38
+const COL_W = 44
+const LEFT_W = 170
 
 function Th({
-  label, sortKey, current, dir, onSort, sticky,
+  label, sortKey, current, dir, onSort, first,
 }: {
   label: string; sortKey: SortKey; current: SortKey; dir: SortDir
-  onSort: (k: SortKey) => void; sticky?: 'right'
+  onSort: (k: SortKey) => void; first?: boolean
 }) {
   const isActive = current === sortKey
   return (
@@ -188,44 +189,38 @@ function Th({
       onClick={() => onSort(sortKey)}
       sx={{
         width: COL_W, minWidth: COL_W,
-        position: sticky ? 'sticky' : undefined,
-        right: sticky === 'right' ? 0 : undefined,
-        zIndex: sticky ? 2 : undefined,
-        bgcolor: STICKY_BG,
         textAlign: 'center',
-        pb: 0.75, pt: 0.25,
+        pb: 0.75, pt: 0.5,
         cursor: 'pointer', userSelect: 'none',
         color: isActive ? 'primary.main' : 'text.secondary',
         fontWeight: isActive ? 700 : 400,
-        fontSize: '0.68rem',
+        fontSize: '0.65rem',
+        letterSpacing: 0.5,
         borderBottom: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: sticky === 'right' ? '-3px 0 6px rgba(0,0,0,0.4)' : undefined,
+        borderLeft: first ? '1px solid rgba(255,255,255,0.08)' : undefined,
         whiteSpace: 'nowrap',
         '&:hover': { color: 'text.primary' },
       }}
     >
-      {label}{isActive ? (dir === 'desc' ? '↓' : '↑') : ''}
+      {label}{isActive ? (dir === 'desc' ? ' ↓' : ' ↑') : ''}
     </Box>
   )
 }
 
-function Td({ value, color, bold, sticky }: { value: string | number; color?: string; bold?: boolean; sticky?: 'right' }) {
+function Td({ value, color, bold, first }: { value: string | number; color?: string; bold?: boolean; first?: boolean }) {
   return (
     <Box
       component="td"
       sx={{
         width: COL_W, minWidth: COL_W,
-        position: sticky ? 'sticky' : undefined,
-        right: sticky === 'right' ? 0 : undefined,
-        zIndex: sticky ? 1 : undefined,
-        bgcolor: STICKY_BG,
         textAlign: 'center',
-        fontSize: bold ? '1rem' : '0.78rem',
+        fontSize: bold ? '1.05rem' : '0.8rem',
         fontWeight: bold ? 700 : 400,
         fontFamily: bold ? 'Barlow Condensed' : 'inherit',
         color: color ?? 'text.secondary',
-        py: 0.85,
-        boxShadow: sticky === 'right' ? '-3px 0 6px rgba(0,0,0,0.4)' : undefined,
+        py: 1,
+        borderLeft: first ? '1px solid rgba(255,255,255,0.08)' : undefined,
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
       }}
     >
       {value}
@@ -235,51 +230,71 @@ function Td({ value, color, bold, sticky }: { value: string | number; color?: st
 
 // ─── StandingsRow ─────────────────────────────────────────────────────────────
 
-const LEFT_W = 158 // px — rank(18) + dot(9) + name(~80) + flags(2×21) + gaps
-
 function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow; playedTeams: Set<string>; onMemberClick: (m: PoolMember) => void }) {
+  const RANK_COLORS: Record<number, string> = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
+  const rankColor = RANK_COLORS[row.rank]
+
   return (
     <Box
       component="tr"
       onClick={() => onMemberClick(row.member)}
       sx={{
         cursor: 'pointer',
-        '&:hover .scell': { bgcolor: 'rgba(255,255,255,0.05) !important' },
-        '&:active .scell': { bgcolor: 'rgba(255,255,255,0.1) !important' },
+        '&:hover .lcell': { bgcolor: 'rgba(255,255,255,0.04) !important' },
+        '&:active .lcell': { bgcolor: 'rgba(255,255,255,0.08) !important' },
+        '&:hover td': { bgcolor: 'rgba(255,255,255,0.02)' },
       }}
     >
-      {/* LEFT sticky: rank · dot · name · flags */}
+      {/* LEFT sticky: rank · flags · name + record */}
       <Box
         component="td"
-        className="scell"
+        className="lcell"
         sx={{
           position: 'sticky', left: 0, zIndex: 1,
           bgcolor: STICKY_BG,
           width: LEFT_W, minWidth: LEFT_W, maxWidth: LEFT_W,
-          py: 0.85, pr: 1,
+          py: 1, pr: 1.5,
           borderBottom: '1px solid rgba(255,255,255,0.05)',
-          boxShadow: '3px 0 6px rgba(0,0,0,0.35)',
+          boxShadow: '4px 0 8px rgba(0,0,0,0.4)',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, overflow: 'hidden' }}>
-          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '0.85rem', color: 'text.secondary', width: 16, textAlign: 'center', flexShrink: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+          {/* Rank */}
+          <Typography sx={{
+            fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '0.85rem',
+            color: rankColor ?? 'text.secondary',
+            width: 18, textAlign: 'center', flexShrink: 0,
+          }}>
             {row.rank}
           </Typography>
-          <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: row.member.color, flexShrink: 0 }} />
-          <Typography sx={{ fontFamily: 'Barlow Condensed', fontWeight: 600, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>
-            {row.member.displayName.split(' ')[0]}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+
+          {/* Flags stacked */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, flexShrink: 0 }}>
             {row.member.teams.map((code) => (
-              <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.35 }}>
-                <TeamFlag tla={code} size={15} />
+              <Box key={code} sx={{ opacity: playedTeams.has(code) ? 1 : 0.3 }}>
+                <TeamFlag tla={code} size={14} />
               </Box>
             ))}
+          </Box>
+
+          {/* Name + record */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{
+              fontFamily: 'Barlow Condensed', fontWeight: 700, fontSize: '0.95rem',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              lineHeight: 1.2,
+            }}>
+              {row.member.displayName}
+            </Typography>
+            <Typography sx={{ fontSize: '0.62rem', color: 'text.secondary', lineHeight: 1.2 }}>
+              {row.won}W · {row.drawn}D · {row.lost}L
+            </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Scrollable stat columns */}
+      {/* Scrollable columns — Pts first, then rest */}
+      <Td value={row.points} bold color={rankColor ?? 'text.primary'} first />
       <Td value={row.played} />
       <Td value={row.won} />
       <Td value={row.drawn} />
@@ -289,9 +304,6 @@ function StandingsRow({ row, playedTeams, onMemberClick }: { row: LeaderboardRow
       <Td value={row.goalsAgainst} />
       <Td value={row.yellowCards} color="rgba(255,210,0,0.85)" />
       <Td value={row.redCards} color="rgba(220,80,80,0.9)" />
-
-      {/* RIGHT sticky: points */}
-      <Td value={row.points} bold color="text.primary" sticky="right" />
     </Box>
   )
 }
@@ -429,54 +441,61 @@ export default function HomePage() {
       {rows.length === 0 ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2 }}>
           <CircularProgress size={16} />
-          <Typography variant="body2" color="text.secondary">
-            Loading standings…
-          </Typography>
+          <Typography variant="body2" color="text.secondary">Loading standings…</Typography>
         </Box>
       ) : (
-        <Box sx={{ overflowX: 'auto', mx: -2, px: 2 }}>
-          <Box
-            component="table"
-            sx={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}
-          >
-            <Box component="thead">
-              <Box component="tr">
-                {/* LEFT sticky header */}
-                <Box
-                  component="th"
-                  sx={{
-                    position: 'sticky', left: 0, zIndex: 3,
-                    bgcolor: STICKY_BG,
-                    width: LEFT_W, minWidth: LEFT_W,
-                    pb: 0.75, pt: 0.25, pr: 1,
-                    textAlign: 'left',
-                    fontSize: '0.68rem', color: 'text.secondary', fontWeight: 400,
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    boxShadow: '3px 0 6px rgba(0,0,0,0.35)',
-                  }}
-                >
-                  Player
+        <>
+          <Box sx={{ overflowX: 'auto', mx: -2 }}>
+            <Box component="table" sx={{ borderCollapse: 'collapse', minWidth: '100%' }}>
+              <Box component="thead">
+                <Box component="tr">
+                  {/* LEFT sticky header */}
+                  <Box
+                    component="th"
+                    sx={{
+                      position: 'sticky', left: 0, zIndex: 3,
+                      bgcolor: STICKY_BG,
+                      width: LEFT_W, minWidth: LEFT_W,
+                      pb: 0.75, pt: 0.5, pl: 2, pr: 1,
+                      textAlign: 'left',
+                      fontSize: '0.65rem', color: 'text.secondary', fontWeight: 600,
+                      letterSpacing: 0.8, textTransform: 'uppercase',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: '4px 0 8px rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    Team
+                  </Box>
+                  <Th label="PTS" sortKey="points"        {...headerProps} first />
+                  <Th label="P"   sortKey="played"        {...headerProps} />
+                  <Th label="W"   sortKey="won"           {...headerProps} />
+                  <Th label="D"   sortKey="drawn"         {...headerProps} />
+                  <Th label="L"   sortKey="lost"          {...headerProps} />
+                  <Th label="GD"  sortKey="goalDifference" {...headerProps} />
+                  <Th label="GF"  sortKey="goalsFor"      {...headerProps} />
+                  <Th label="GA"  sortKey="goalsAgainst"  {...headerProps} />
+                  <Th label="🟨"  sortKey="yellowCards"   {...headerProps} />
+                  <Th label="🟥"  sortKey="redCards"      {...headerProps} />
                 </Box>
-                <Th label="P"   sortKey="played"        {...headerProps} />
-                <Th label="W"   sortKey="won"            {...headerProps} />
-                <Th label="D"   sortKey="drawn"          {...headerProps} />
-                <Th label="L"   sortKey="lost"           {...headerProps} />
-                <Th label="GD"  sortKey="goalDifference" {...headerProps} />
-                <Th label="GF"  sortKey="goalsFor"       {...headerProps} />
-                <Th label="GA"  sortKey="goalsAgainst"   {...headerProps} />
-                <Th label="🟨"  sortKey="yellowCards"    {...headerProps} />
-                <Th label="🟥"  sortKey="redCards"       {...headerProps} />
-                {/* RIGHT sticky header */}
-                <Th label="Pts" sortKey="points"         {...headerProps} sticky="right" />
+              </Box>
+              <Box component="tbody">
+                {rows.map((row) => (
+                  <StandingsRow key={row.member.id} row={row} playedTeams={playedTeams} onMemberClick={setDrawerMember} />
+                ))}
               </Box>
             </Box>
-            <Box component="tbody">
-              {rows.map((row) => (
-                <StandingsRow key={row.member.id} row={row} playedTeams={playedTeams} onMemberClick={setDrawerMember} />
-              ))}
-            </Box>
           </Box>
-        </Box>
+
+          {/* Legend */}
+          <Box sx={{ mt: 2, px: 2, display: 'flex', flexDirection: 'column', gap: 0.4 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+              Win = 3 pts · Draw = 1 pt · Loss = 0 pts
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+              Tiebreaker: Goal Difference (GD)
+            </Typography>
+          </Box>
+        </>
       )}
 
       <TeamDrawer teamCode={drawerTeam} matches={matches} onClose={() => setDrawerTeam(null)} />
