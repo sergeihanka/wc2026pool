@@ -203,7 +203,7 @@ export default function ChatPage() {
             multiline
             maxRows={4}
             fullWidth
-            sx={{ fontSize: '0.9rem', color: 'text.primary' }}
+            sx={{ fontSize: '1rem', color: 'text.primary' }}
           />
         </Box>
         <IconButton
