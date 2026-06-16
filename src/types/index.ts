@@ -35,6 +35,7 @@ export interface Match {
   goals: Goal[]
   bookings: Booking[]
   minute?: number | null   // live match minute
+  venue?: string      // stadium name from API
 }
 
 export interface PoolMember {

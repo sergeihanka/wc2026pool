@@ -16,6 +16,8 @@ import { supabase } from '@/lib/supabase'
 import { teamFlag } from '@/lib/flags'
 import { StatusChip, formatStageLabel } from '@/components/MatchCard'
 import { POOL_MEMBERS } from '@/config/pool'
+import { getStadiumInfo } from '@/lib/stadiums'
+import { useWeather } from '@/hooks/useWeather'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,6 +128,78 @@ function BookingsSection({ match }: { match: Match }) {
           </Box>
         )
       })}
+    </Box>
+  )
+}
+
+// ─── VenueWeather ─────────────────────────────────────────────────────────────
+
+function VenueWeather({ match }: { match: Match }) {
+  const stadium = getStadiumInfo(match.venue)
+  const { weather, loading: weatherLoading } = useWeather(
+    stadium?.lat ?? null,
+    stadium?.lon ?? null,
+    match.utcDate,
+  )
+
+  if (!stadium) return null
+
+  return (
+    <Box
+      sx={{
+        mt: 2,
+        bgcolor: 'background.paper',
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+        Venue
+      </Typography>
+      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+        {stadium.name}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        {stadium.city}, {stadium.country}
+        {' · '}
+        {stadium.capacity.toLocaleString()} cap.
+      </Typography>
+
+      {weatherLoading && (
+        <Skeleton variant="rectangular" height={48} sx={{ borderRadius: 1.5 }} />
+      )}
+
+      {!weatherLoading && weather && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
+            bgcolor: 'action.hover',
+            borderRadius: 1.5,
+            px: 2,
+            py: 1,
+          }}
+        >
+          <Typography variant="h6" sx={{ lineHeight: 1 }}>
+            {weather.condition}
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {weather.tempC}°C / {weather.tempF}°F
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="body2" color="text.secondary">
+              💧 {weather.humidity}%
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              💨 {weather.windKph} km/h
+            </Typography>
+          </Box>
+        </Box>
+      )}
     </Box>
   )
 }
@@ -389,6 +463,8 @@ export default function MatchDetailPage() {
               </>
             )}
           </Box>
+
+          <VenueWeather match={match} />
 
           <PoolMemberIndicator match={match} />
         </>

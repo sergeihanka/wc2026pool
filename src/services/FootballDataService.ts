@@ -51,6 +51,7 @@ interface ApiMatch {
   awayTeam: ApiTeam
   goals: ApiGoal[]
   bookings?: ApiBooking[]
+  venue?: string | null
 }
 
 interface ApiMatchesResponse {
@@ -107,6 +108,7 @@ function mapMatch(apiMatch: ApiMatch): Match {
     goals: mapGoals(apiMatch.goals ?? [], apiMatch.homeTeam.id),
     bookings: mapBookings(apiMatch.bookings, apiMatch.homeTeam.id),
     minute: apiMatch.minute ?? null,
+    venue: apiMatch.venue ?? undefined,
   }
 }
 
