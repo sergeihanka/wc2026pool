@@ -17,6 +17,7 @@ interface MatchDbRow {
   goals: Goal[] | null
   bookings: Booking[] | null
   live_minute: number | null
+  venue: string | null
   updated_at: string
 }
 
@@ -175,6 +176,7 @@ function dbRowToMatch(row: MatchDbRow): Match {
     goals: row.goals ?? [],
     bookings: row.bookings ?? [],
     minute: row.live_minute,
+    venue: row.venue ?? undefined,
   }
 }
 

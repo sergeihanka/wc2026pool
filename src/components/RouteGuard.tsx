@@ -11,6 +11,7 @@ import ChatBubbleIcon from '@mui/icons-material/ChatBubble'
 import { useAuth } from '@/hooks/useAuth'
 import { useChat } from '@/hooks/useChat'
 import InstallBanner from '@/components/InstallBanner'
+import { APP_VERSION } from '@/version'
 
 const NAV_BG = '#0a1628'
 const NAV_H = 56
@@ -63,6 +64,13 @@ export default function RouteGuard() {
       <Box sx={{ flexShrink: 0, height: 'env(safe-area-inset-top, 0px)', bgcolor: 'background.default' }} />
 
       <InstallBanner />
+
+      {/* Version badge */}
+      <Box sx={{ position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 6px)', right: 10, zIndex: 1200, pointerEvents: 'none' }}>
+        <Box component="span" sx={{ fontSize: 10, color: 'text.disabled', fontFamily: 'monospace', letterSpacing: 0.5 }}>
+          v{APP_VERSION}
+        </Box>
+      </Box>
 
       {/* Scrollable content */}
       <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>

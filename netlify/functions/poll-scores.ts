@@ -21,7 +21,7 @@ interface ApiMatch {
   id: number; utcDate: string; status: string; stage: string; group: string | null
   score: { fullTime: { home: number | null; away: number | null } }
   minute: number | null; homeTeam: ApiTeam; awayTeam: ApiTeam
-  goals: ApiGoal[]; bookings?: ApiBooking[]
+  goals: ApiGoal[]; bookings?: ApiBooking[]; venue?: string | null
 }
 
 function json(body: unknown, status = 200): Response {
@@ -94,6 +94,7 @@ export default async function handler(_req: Request, _context: Context): Promise
     stage: m.stage,
     match_group: m.group ?? null,
     utc_date: m.utcDate,
+    venue: m.venue ?? null,
     goals: (m.goals ?? []).map((g) => ({
       scorer: g.scorer?.name ?? null,
       minute: g.minute ?? 0,
