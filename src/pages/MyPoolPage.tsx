@@ -9,7 +9,13 @@ import Divider from '@mui/material/Divider'
 import Skeleton from '@mui/material/Skeleton'
 import Alert from '@mui/material/Alert'
 import Tooltip from '@mui/material/Tooltip'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
 import { useAuth } from '@/hooks/useAuth'
+import { clearAllAndLogout } from '@/lib/cacheUtils'
 import { poolService } from '@/services/PoolService'
 import { POOL_MEMBERS } from '@/config/pool'
 import { teamFlag } from '@/lib/flags'
@@ -411,7 +417,9 @@ function TeamSection({
 const POOL_VIEW_KEY = 'wcp_pool_view'
 
 export default function MyPoolPage() {
-  const { currentMember } = useAuth()
+  const { currentMember, logout } = useAuth()
+  const navigate = useNavigate()
+  const [switchDialogOpen, setSwitchDialogOpen] = useState(false)
   const [viewMemberId, setViewMemberId] = useState<string>(() => {
     const saved = localStorage.getItem(POOL_VIEW_KEY)
     if (saved && POOL_MEMBERS.some((m) => m.id === saved)) return saved
@@ -421,6 +429,13 @@ export default function MyPoolPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rows, setRows] = useState<LeaderboardRow[]>([])
+
+  async function handleSwitchUser() {
+    setSwitchDialogOpen(false)
+    logout()
+    await clearAllAndLogout()
+    navigate('/login', { replace: true })
+  }
 
   async function load() {
     try {
@@ -519,6 +534,40 @@ export default function MyPoolPage() {
           member={viewMember}
         />
       ))}
+
+      {/* Switch user */}
+      {currentMember && (
+        <Box sx={{ mt: 4, mb: 2, textAlign: 'center' }}>
+          <Button
+            size="small"
+            variant="text"
+            onClick={() => setSwitchDialogOpen(true)}
+            sx={{ color: 'text.disabled', fontSize: '0.72rem', textTransform: 'none' }}
+          >
+            Not {currentMember.displayName.split(' ')[0]}? Switch user
+          </Button>
+        </Box>
+      )}
+
+      <Dialog
+        open={switchDialogOpen}
+        onClose={() => setSwitchDialogOpen(false)}
+      >
+        <DialogTitle sx={{ fontFamily: 'Barlow Condensed', fontWeight: 700 }}>
+          Switch user?
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            This will sign out and clear all local data. You'll be asked to choose your profile again.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSwitchDialogOpen(false)}>Cancel</Button>
+          <Button color="error" onClick={() => void handleSwitchUser()}>
+            Sign out &amp; clear
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

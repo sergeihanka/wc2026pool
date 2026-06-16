@@ -8,24 +8,26 @@ import { router } from './router'
 import theme from './theme'
 import { AuthProvider } from '@/context/AuthContext'
 import { ONESIGNAL_APP_ID } from '@/config/env'
+import { checkVersionAndClear } from '@/lib/cacheUtils'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </ThemeProvider>
-  </StrictMode>,
-)
+// Clear stale caches on version mismatch before rendering (preserves session)
+checkVersionAndClear().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ThemeProvider>
+    </StrictMode>,
+  )
 
-// Initialize OneSignal non-blocking after React has rendered.
-// Only runs when an App ID is configured (skipped in unit-test environments).
-if (ONESIGNAL_APP_ID) {
-  OneSignal.init({
-    appId: ONESIGNAL_APP_ID,
-    allowLocalhostAsSecureOrigin: true,
-    serviceWorkerParam: { scope: '/' },
-  }).catch(console.error)
-}
+  if (ONESIGNAL_APP_ID) {
+    OneSignal.init({
+      appId: ONESIGNAL_APP_ID,
+      allowLocalhostAsSecureOrigin: true,
+      serviceWorkerParam: { scope: '/' },
+    }).catch(console.error)
+  }
+}).catch(console.error)
