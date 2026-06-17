@@ -14,7 +14,7 @@ import { useChat } from '@/hooks/useChat'
 import { POOL_MEMBERS } from '@/config/pool'
 import type { ChatMessage, ReactionsMap } from '@/hooks/useChat'
 
-const QUICK_EMOJIS = ['👍', '👎', '🍆', '🔥', '💯', '🐈‍⬛', '⚽️', '🚨']
+const QUICK_EMOJIS = ['👍', '👎', '🍆', '💯', '⚽️', '🚨']
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
