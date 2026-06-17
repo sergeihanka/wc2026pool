@@ -14,7 +14,7 @@ import { useChat } from '@/hooks/useChat'
 import { POOL_MEMBERS } from '@/config/pool'
 import type { ChatMessage, ReactionsMap } from '@/hooks/useChat'
 
-const QUICK_EMOJIS = ['👍', '🔥', '😂', '😱', '💀', '🎉', '🤣', '😤']
+const QUICK_EMOJIS = ['👍', '👎', '🍆', '🔥', '💯', '🐈‍⬛', '⚽️', '🚨']
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -213,19 +213,20 @@ function MessageBubble({
         <Collapse in={actionsOpen}>
           <Box
             sx={{
-              display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, mx: 0.5,
+              display: 'flex', alignItems: 'center', gap: 0.25, mt: 0.5, mx: 0.5,
               flexDirection: isOwn ? 'row-reverse' : 'row',
-              flexWrap: 'wrap',
             }}
           >
+            <EmojiPicker onPick={(emoji) => { onToggleReaction(msg.id, emoji); setActionsOpen(false) }} />
+            {/* Divider */}
+            <Box sx={{ width: '1px', height: 22, bgcolor: 'rgba(255,255,255,0.18)', mx: 0.5, flexShrink: 0 }} />
             <IconButton
               size="small"
               onClick={(e) => { e.stopPropagation(); onReply(msg); setActionsOpen(false) }}
-              sx={{ color: 'text.secondary', p: 0.5, '&:hover': { color: 'primary.light' } }}
+              sx={{ color: 'text.secondary', p: 0.5, '&:active': { color: 'primary.light' } }}
             >
               <ReplyIcon sx={{ fontSize: 16 }} />
             </IconButton>
-            <EmojiPicker onPick={(emoji) => { onToggleReaction(msg.id, emoji); setActionsOpen(false) }} />
           </Box>
         </Collapse>
       </Box>
