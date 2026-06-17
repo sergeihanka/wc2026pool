@@ -19,6 +19,25 @@ import { POOL_MEMBERS } from '@/config/pool'
 import { getStadiumInfo } from '@/lib/stadiums'
 import { useWeather } from '@/hooks/useWeather'
 
+// Lazily resolve venue via Netlify function, caching the result in module scope
+// so repeated re-renders don't trigger duplicate fetches.
+const venueCache = new Map<number, string | null>()
+
+async function resolveVenue(matchId: number, currentVenue: string | undefined): Promise<string | null> {
+  if (currentVenue) return currentVenue
+  if (venueCache.has(matchId)) return venueCache.get(matchId)!
+  try {
+    const res = await fetch(`/.netlify/functions/fetch-venue?matchId=${matchId}`)
+    if (res.ok) {
+      const data = await res.json() as { venue?: string | null }
+      const venue = data.venue ?? null
+      venueCache.set(matchId, venue)
+      return venue
+    }
+  } catch { /* network failure — show nothing */ }
+  return null
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatKickoff(utcDate: string): string {
@@ -134,8 +153,8 @@ function BookingsSection({ match }: { match: Match }) {
 
 // ─── VenueWeather ─────────────────────────────────────────────────────────────
 
-function VenueWeather({ match }: { match: Match }) {
-  const stadium = getStadiumInfo(match.venue)
+function VenueWeather({ match, resolvedVenue }: { match: Match; resolvedVenue: string | null }) {
+  const stadium = getStadiumInfo(resolvedVenue ?? match.venue)
   const { weather, loading: weatherLoading } = useWeather(
     stadium?.lat ?? null,
     stadium?.lon ?? null,
@@ -268,6 +287,7 @@ export default function MatchDetailPage() {
   const [match, setMatch] = useState<Match | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [resolvedVenue, setResolvedVenue] = useState<string | null>(null)
 
   async function fetchMatch() {
     if (!matchId) return
@@ -288,10 +308,15 @@ export default function MatchDetailPage() {
     }
   }
 
-  // Initial fetch
+  // Initial fetch + lazy venue resolution
   useEffect(() => {
     void fetchMatch()
   }, [matchId])
+
+  useEffect(() => {
+    if (!match) return
+    void resolveVenue(match.id, match.venue).then(setResolvedVenue)
+  }, [match?.id, match?.venue])
 
   // Supabase Realtime: re-fetch this specific match whenever the server-side
   // poller writes new data — gives instant goal/card/minute updates.
@@ -464,7 +489,7 @@ export default function MatchDetailPage() {
             )}
           </Box>
 
-          <VenueWeather match={match} />
+          <VenueWeather match={match} resolvedVenue={resolvedVenue} />
 
           <PoolMemberIndicator match={match} />
         </>
