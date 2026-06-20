@@ -10,7 +10,7 @@ import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SportsIcon from '@mui/icons-material/Sports'
-import type { Match } from '@/types'
+import type { Match, Booking } from '@/types'
 import { poolService } from '@/services/PoolService'
 import { supabase } from '@/lib/supabase'
 import { teamFlag } from '@/lib/flags'
@@ -19,22 +19,31 @@ import { POOL_MEMBERS } from '@/config/pool'
 import { getStadiumInfo } from '@/lib/stadiums'
 import { useWeather } from '@/hooks/useWeather'
 
-// Lazily resolve venue via Netlify function, caching the result in module scope
-// so repeated re-renders don't trigger duplicate fetches.
-const venueCache = new Map<number, string | null>()
+interface MatchDetail { venue: string | null; bookings: Booking[] }
 
-async function resolveVenue(matchId: number, currentVenue: string | undefined): Promise<string | null> {
-  if (currentVenue) return currentVenue
-  if (venueCache.has(matchId)) return venueCache.get(matchId)!
+// Module-level cache — survives re-renders, cleared on page reload
+const detailCache = new Map<number, MatchDetail>()
+
+async function fetchMatchDetail(matchId: number, match: Match): Promise<MatchDetail | null> {
+  // If we already have both venue and bookings, skip the network call
+  const hasVenue = !!match.venue
+  const hasBookings = match.bookings && match.bookings.length > 0
+  if (hasVenue && hasBookings) return null
+
+  if (detailCache.has(matchId)) return detailCache.get(matchId)!
+
   try {
     const res = await fetch(`/.netlify/functions/fetch-venue?matchId=${matchId}`)
     if (res.ok) {
-      const data = await res.json() as { venue?: string | null }
-      const venue = data.venue ?? null
-      venueCache.set(matchId, venue)
-      return venue
+      const data = await res.json() as { venue?: string | null; bookings?: Booking[] }
+      const detail: MatchDetail = {
+        venue: data.venue ?? null,
+        bookings: data.bookings ?? [],
+      }
+      detailCache.set(matchId, detail)
+      return detail
     }
-  } catch { /* network failure — show nothing */ }
+  } catch { /* network failure */ }
   return null
 }
 
@@ -108,8 +117,8 @@ function GoalTimeline({ match }: { match: Match }) {
 
 // ─── BookingsSection ──────────────────────────────────────────────────────────
 
-function BookingsSection({ match }: { match: Match }) {
-  const bookings = match.bookings ?? []
+function BookingsSection({ match, bookings: overrideBookings }: { match: Match; bookings?: Booking[] }) {
+  const bookings = overrideBookings ?? match.bookings ?? []
   if (bookings.length === 0) return null
 
   return (
@@ -288,6 +297,7 @@ export default function MatchDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resolvedVenue, setResolvedVenue] = useState<string | null>(null)
+  const [extraBookings, setExtraBookings] = useState<Booking[]>([])
 
   async function fetchMatch() {
     if (!matchId) return
@@ -315,7 +325,11 @@ export default function MatchDetailPage() {
 
   useEffect(() => {
     if (!match) return
-    void resolveVenue(match.id, match.venue).then(setResolvedVenue)
+    void fetchMatchDetail(match.id, match).then((detail) => {
+      if (!detail) return
+      if (detail.venue) setResolvedVenue(detail.venue)
+      if (detail.bookings.length > 0) setExtraBookings(detail.bookings)
+    })
   }, [match?.id, match?.venue])
 
   // Supabase Realtime: re-fetch this specific match whenever the server-side
@@ -481,12 +495,15 @@ export default function MatchDetailPage() {
             )}
 
             {/* Cards */}
-            {(match.bookings ?? []).length > 0 && (
-              <>
-                <Divider sx={{ mt: 2, mb: 1 }} />
-                <BookingsSection match={match} />
-              </>
-            )}
+            {(() => {
+              const allBookings = extraBookings.length > 0 ? extraBookings : (match.bookings ?? [])
+              return allBookings.length > 0 ? (
+                <>
+                  <Divider sx={{ mt: 2, mb: 1 }} />
+                  <BookingsSection match={match} bookings={allBookings} />
+                </>
+              ) : null
+            })()}
           </Box>
 
           <VenueWeather match={match} resolvedVenue={resolvedVenue} />
